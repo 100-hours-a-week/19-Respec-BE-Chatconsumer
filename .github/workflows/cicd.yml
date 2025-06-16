@@ -3,7 +3,7 @@ name: Deploy Spring Boot (No deploy.sh in ZIP)
 on:
   push:
     branches:
-      - main
+      - dev
 
 jobs:
   build-and-deploy:
