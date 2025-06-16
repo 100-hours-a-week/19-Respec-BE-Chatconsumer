@@ -30,7 +30,7 @@ jobs:
           cp -r build specranking-dev-chatconsumer/
           zip -r specranking-dev-chatconsumer.zip specranking-dev-chatconsumer
 
-      - name: Copy ZIP to Private EC2 via Bastion (ProxyJump)
+      - name: Copy ZIP to Bastion only
         run: |
           echo "${{ secrets.PRIVATE_SSH_KEY }}" > private.pem
           chmod 600 private.pem
@@ -38,15 +38,16 @@ jobs:
           scp \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
-            -o ProxyJump=ec2-user@${{ secrets.DEV_BASTION_HOST }} \
             -i private.pem specranking-dev-chatconsumer.zip \
-            ec2-user@${{ secrets.DEV_PRIVATE_HOST }}:/home/ec2-user/
+            ec2-user@${{ secrets.DEV_BASTION_HOST }}:/home/ec2-user/
 
-      - name: Run deploy.sh on Private EC2 via Bastion (ProxyJump)
+      - name: Bastion runs deploy to Private EC2
         run: |
           ssh \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
-            -o ProxyJump=ec2-user@${{ secrets.DEV_BASTION_HOST }} \
-            -i private.pem ec2-user@${{ secrets.DEV_PRIVATE_HOST }} \
-            'unzip -o specranking-dev-chatconsumer.zip && bash deploy.sh'
+            -i private.pem ec2-user@${{ secrets.DEV_BASTION_HOST }} \
+            "
+              scp -o StrictHostKeyChecking=no specranking-dev-chatconsumer.zip ec2-user@${{ secrets.DEV_PRIVATE_HOST }}:/home/ec2-user/ && \
+              ssh ec2-user@${{ secrets.DEV_PRIVATE_HOST }} 'unzip -o specranking-dev-chatconsumer.zip && bash deploy.sh'
+            "
