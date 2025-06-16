@@ -48,6 +48,6 @@ jobs:
             -o UserKnownHostsFile=/dev/null \
             -i private.pem ec2-user@${{ secrets.DEV_BASTION_HOST }} \
             "
-              scp -o StrictHostKeyChecking=no specranking-dev-chatconsumer.zip ec2-user@${{ secrets.DEV_PRIVATE_HOST }}:/home/ec2-user/ && \
-              ssh ec2-user@${{ secrets.DEV_PRIVATE_HOST }} 'unzip -o specranking-dev-chatconsumer.zip && bash deploy.sh'
+              scp -i ~/master.pem -o StrictHostKeyChecking=no specranking-dev-chatconsumer.zip ec2-user@${{ secrets.DEV_PRIVATE_HOST }}:/home/ec2-user/ && \
+              ssh -i ~/master.pem ec2-user@${{ secrets.DEV_PRIVATE_HOST }} 'unzip -o specranking-dev-chatconsumer.zip && bash deploy.sh'
             "
