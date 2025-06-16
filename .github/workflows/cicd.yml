@@ -22,7 +22,7 @@ jobs:
       - name: Gradle Build (Skip Tests)
         run: |
           chmod +x gradlew
-          ./gradlew build -x test   # ✅ 테스트 생략!
+          ./gradlew build -x test   # ✅ 테스트 생략
 
       - name: Make ZIP (specranking-dev-chatconsumer.zip)
         run: |
@@ -36,11 +36,16 @@ jobs:
           echo "${{ secrets.PRIVATE_SSH_KEY }}" > private.pem
           chmod 600 bastion.pem private.pem
 
-          scp -o ProxyJump=ec2-user@${{ secrets.DEV_BASTION_HOST }} \
-              -i private.pem specranking-dev-chatconsumer.zip ec2-user@${{ secrets.DEV_PRIVATE_HOST }}:/home/ec2-user/
+          scp \
+            -o StrictHostKeyChecking=no \
+            -o ProxyJump=ec2-user@${{ secrets.DEV_BASTION_HOST }} \
+            -i private.pem specranking-dev-chatconsumer.zip \
+            ec2-user@${{ secrets.DEV_PRIVATE_HOST }}:/home/ec2-user/
 
       - name: Run deploy.sh on Private EC2 via Bastion (ProxyJump)
         run: |
-          ssh -o ProxyJump=ec2-user@${{ secrets.DEV_BASTION_HOST }} \
-              -i private.pem ec2-user@${{ secrets.DEV_PRIVATE_HOST }} \
-              'unzip -o specranking-dev-chatconsumer.zip && bash deploy.sh'
+          ssh \
+            -o StrictHostKeyChecking=no \
+            -o ProxyJump=ec2-user@${{ secrets.DEV_BASTION_HOST }} \
+            -i private.pem ec2-user@${{ secrets.DEV_PRIVATE_HOST }} \
+            'unzip -o specranking-dev-chatconsumer.zip && bash deploy.sh'
