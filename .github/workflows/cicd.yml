@@ -1,0 +1,25 @@
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup SSH key
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY_BASTION }}" > bastion.pem
+          chmod 600 bastion.pem
+          echo "${{ secrets.SSH_PRIVATE_KEY_PRIVATE }}" > private.pem
+          chmod 600 private.pem
+
+      - name: Deploy via Bastion ProxyJump
+        run: |
+          # 예: 직접 Private EC2에 파일 복사 (via ProxyJump)
+          scp -o ProxyJump=ec2-user@${{ secrets.BASTION_HOST }} \
+              -i private.pem your-app.zip ec2-user@${{ secrets.PRIVATE_HOST }}:/home/ec2-user/
+
+          # 예: Private EC2에서 배포 스크립트 실행
+          ssh -o ProxyJump=ec2-user@${{ secrets.BASTION_HOST }} \
+              -i private.pem ec2-user@${{ secrets.PRIVATE_HOST }} \
+              'unzip -o 19-Respec-BE-Chatconsumer-dev.zip && bash deploy.sh'
