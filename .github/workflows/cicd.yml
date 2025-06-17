@@ -1,4 +1,4 @@
-name: Deploy Spring Boot (No deploy.sh in ZIP)
+name: Deploy Spring Boot Fat Jar
 
 on:
   push:
@@ -10,44 +10,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up JDK 21
+      - name: Setup JDK 21
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Gradle Build (Skip Tests)
+      - name: Build Fat Jar
         run: |
           chmod +x gradlew
-          ./gradlew build -x test
+          ./gradlew clean bootJar
 
-      - name: Make ZIP (specranking-dev-chatconsumer.zip)
-        run: |
-          mkdir specranking-dev-chatconsumer
-          cp -r build specranking-dev-chatconsumer/
-          zip -r specranking-dev-chatconsumer.zip specranking-dev-chatconsumer
-
-      - name: Copy ZIP to Bastion only
+      - name: SCP Fat Jar to Bastion
         run: |
           echo "${{ secrets.PRIVATE_SSH_KEY }}" > private.pem
           chmod 600 private.pem
+          
+          JAR_NAME=$(ls build/libs | grep 'SNAPSHOT.jar' | grep -v plain)
+          echo "Uploading $JAR_NAME"
+          
+          scp -o StrictHostKeyChecking=no -i private.pem build/libs/$JAR_NAME ec2-user@${{ secrets.DEV_BASTION_HOST }}:/home/ec2-user/
 
-          scp \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            -i private.pem specranking-dev-chatconsumer.zip \
-            ec2-user@${{ secrets.DEV_BASTION_HOST }}:/home/ec2-user/
-
-      - name: Bastion runs deploy to Private EC2
+      - name: SSH Bastion and Deploy
         run: |
-          ssh \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            -i private.pem ec2-user@${{ secrets.DEV_BASTION_HOST }} \
-            "
-              scp -i ~/master.pem -o StrictHostKeyChecking=no specranking-dev-chatconsumer.zip ec2-user@${{ secrets.DEV_PRIVATE_HOST }}:/home/ec2-user/ && \
-              ssh -i ~/master.pem ec2-user@${{ secrets.DEV_PRIVATE_HOST }} 'unzip -o specranking-dev-chatconsumer.zip && bash deploy-chatconsumer.sh'
-            "
+          ssh -o StrictHostKeyChecking=no -i private.pem ec2-user@${{ secrets.DEV_BASTION_HOST }} "
+            JAR_NAME=\$(ls /home/ec2-user | grep 'SNAPSHOT.jar' | grep -v plain)
+            scp -i ~/master.pem -o StrictHostKeyChecking=no \$JAR_NAME ec2-user@${{ secrets.DEV_PRIVATE_HOST }}:/home/ec2-user/ && \
+            ssh -i ~/master.pem ec2-user@${{ secrets.DEV_PRIVATE_HOST }} 'bash ~/deploy-chatconsumer.sh'
+          "
