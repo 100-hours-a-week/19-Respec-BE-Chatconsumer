@@ -9,9 +9,11 @@ import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.entity.Use
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class RelayService {
 

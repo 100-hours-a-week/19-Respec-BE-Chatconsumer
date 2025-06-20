@@ -2,7 +2,6 @@ package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.transaction.Transactional;
 import java.time.Duration;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.consume.ChatConsumeDto;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.mapping.ChatDtoMapping;
@@ -19,9 +18,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class ChatConsumeService {
 
@@ -38,7 +39,6 @@ public class ChatConsumeService {
 
 
     @KafkaListener(topics = "chat")
-    @Transactional
     public void handleChatMessage(String chatMessage) {
         try {
             ChatConsumeDto chatDto = objectMapper.readValue(chatMessage, ChatConsumeDto.class);
