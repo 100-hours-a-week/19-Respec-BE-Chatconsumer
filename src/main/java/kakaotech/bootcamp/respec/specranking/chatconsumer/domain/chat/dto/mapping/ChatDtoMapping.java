@@ -7,9 +7,9 @@ public class ChatDtoMapping {
 
     public static ChatRelayDto consumeToRelay(ChatConsumeDto consumeDto) {
         return new ChatRelayDto(
-                consumeDto.getSenderId(),
-                consumeDto.getReceiverId(),
-                consumeDto.getContent()
+                consumeDto.senderId(),
+                consumeDto.receiverId(),
+                consumeDto.content()
         );
     }
 }

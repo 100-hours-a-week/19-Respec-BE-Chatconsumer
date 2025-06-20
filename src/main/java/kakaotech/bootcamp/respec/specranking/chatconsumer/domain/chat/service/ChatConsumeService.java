@@ -1,7 +1,8 @@
 package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.common.type.ChatStatus.SENT;
+
 import java.time.Duration;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.consume.ChatConsumeDto;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.mapping.ChatDtoMapping;
@@ -26,10 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ChatConsumeService {
 
-    private static final String SENT_STATUS = "SENT";
     private static final Duration IDEMPOTENCY_TTL = Duration.ofMinutes(3);
 
-    private final ObjectMapper objectMapper;
     private final RelayService relayService;
     private final IdempotencyService idempotencyService;
     private final ChatRepository chatRepository;
@@ -38,29 +37,28 @@ public class ChatConsumeService {
     private final ChatParticipationRepository chatParticipationRepository;
 
 
-    @KafkaListener(topics = "chat")
-    public void handleChatMessage(String chatMessage) {
+    @KafkaListener(topics = "chat", containerFactory = "chatMessageContainerFactory")
+    public void handleChatMessage(ChatConsumeDto chatDto) {
         try {
-            ChatConsumeDto chatDto = objectMapper.readValue(chatMessage, ChatConsumeDto.class);
 
-            if (!SENT_STATUS.equals(chatDto.getStatus())) {
+            if (!chatDto.status().equals(SENT)) {
                 throw new IllegalArgumentException("Chat message is not sent");
             }
 
-            if (!idempotencyService.setIfAbsent(chatDto.getIdempotentKey())) {
+            if (!idempotencyService.setIfAbsent(chatDto.idempotentKey())) {
                 return;
             }
 
-            User sender = findUser(chatDto.getSenderId());
-            User receiver = findUser(chatDto.getReceiverId());
+            User sender = findUser(chatDto.senderId());
+            User receiver = findUser(chatDto.receiverId());
 
             Chatroom chatroom = getOrCreateChatRoom(sender, receiver);
 
-            chatRepository.save(new Chat(sender, receiver, chatroom, chatDto.getContent()));
+            chatRepository.save(new Chat(sender, receiver, chatroom, chatDto.content()));
 
             relayService.relayOrNotify(receiver, ChatDtoMapping.consumeToRelay(chatDto));
 
-            idempotencyService.setTtl(chatDto.getIdempotentKey(), IDEMPOTENCY_TTL);
+            idempotencyService.setTtl(chatDto.idempotentKey(), IDEMPOTENCY_TTL);
 
         } catch (Exception e) {
             log.error("Error processing chat message", e);
