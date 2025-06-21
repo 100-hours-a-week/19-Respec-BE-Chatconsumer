@@ -20,6 +20,7 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
@@ -58,14 +59,21 @@ public class KafkaConfig {
 
     @Bean
     public ConsumerFactory<String, ChatConsumeDto> chatMessageConsumerFactory() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "chat-consumer-group");
-        props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
-        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, ChatConsumeDto.class.getName());
-        return new DefaultKafkaConsumerFactory<>(props);
+        Map<String, Object> consumerProps = getConsumerProps();
+        Map<String, Object> deserializerProps = getDeserializerProps();
+
+        ErrorHandlingDeserializer<String> keyDeserializer =
+                new ErrorHandlingDeserializer<>(new StringDeserializer());
+
+        JsonDeserializer<ChatConsumeDto> jsonDeserializer = new JsonDeserializer<>(ChatConsumeDto.class);
+        jsonDeserializer.configure(deserializerProps, false);
+
+        ErrorHandlingDeserializer<ChatConsumeDto> valueDeserializer =
+                new ErrorHandlingDeserializer<>(jsonDeserializer);
+
+        return new DefaultKafkaConsumerFactory<>(consumerProps, keyDeserializer, valueDeserializer);
+
+
     }
 
     @Bean
@@ -82,6 +90,20 @@ public class KafkaConfig {
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(chatMessageConsumerFactory());
         return factory;
+    }
+
+    private Map<String, Object> getConsumerProps() {
+        Map<String, Object> consumerProps = new HashMap<>();
+        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "chat-consumer-group");
+        return consumerProps;
+    }
+
+    private static Map<String, Object> getDeserializerProps() {
+        Map<String, Object> deserializerProps = new HashMap<>();
+        deserializerProps.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+        deserializerProps.put(JsonDeserializer.VALUE_DEFAULT_TYPE, ChatConsumeDto.class.getName());
+        return deserializerProps;
     }
 
 }
