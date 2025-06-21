@@ -45,7 +45,7 @@ public class ChatConsumeService {
                 throw new IllegalArgumentException("Chat message is not sent");
             }
 
-            if (!idempotencyService.setIfAbsent(chatDto.idempotentKey())) {
+            if (!idempotencyService.setIfAbsent(chatDto.idempotentKey(), IDEMPOTENCY_TTL)) {
                 return;
             }
 
@@ -57,9 +57,7 @@ public class ChatConsumeService {
             chatRepository.save(new Chat(sender, receiver, chatroom, chatDto.content()));
 
             relayService.relayOrNotify(receiver, ChatDtoMapping.consumeToRelay(chatDto));
-
-            idempotencyService.setTtl(chatDto.idempotentKey(), IDEMPOTENCY_TTL);
-
+            
         } catch (Exception e) {
             log.error("Error processing chat message", e);
         }
