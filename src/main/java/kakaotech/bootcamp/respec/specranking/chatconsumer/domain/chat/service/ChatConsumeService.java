@@ -64,7 +64,6 @@ public class ChatConsumeService {
             if (idempotencyService.hasKey(idempotentKey)) {
                 idempotencyService.delete(idempotentKey);
             }
-            log.error("Error processing chat message", e);
             throw e;
         }
     }
