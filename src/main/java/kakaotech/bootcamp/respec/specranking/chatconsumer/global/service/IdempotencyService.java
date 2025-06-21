@@ -16,8 +16,12 @@ public class IdempotencyService {
         return redisTemplate.opsForValue().setIfAbsent(key, DUMMY_VALUE, ttl);
     }
 
-    public void setTtl(String key, Duration ttl) {
-        redisTemplate.expire(key, ttl);
+    public boolean hasKey(String key) {
+        return redisTemplate.hasKey(key);
+    }
+
+    public void delete(String key) {
+        redisTemplate.delete(key);
     }
 
 }

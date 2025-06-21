@@ -39,13 +39,15 @@ public class ChatConsumeService {
 
     @KafkaListener(topics = "chat", containerFactory = "chatMessageContainerFactory")
     public void handleChatMessage(ChatConsumeDto chatDto) {
+        final String idempotentKey = chatDto.idempotentKey();
+
         try {
 
             if (!chatDto.status().equals(SENT)) {
                 throw new IllegalArgumentException("Chat message is not sent");
             }
 
-            if (!idempotencyService.setIfAbsent(chatDto.idempotentKey(), IDEMPOTENCY_TTL)) {
+            if (!idempotencyService.setIfAbsent(idempotentKey, IDEMPOTENCY_TTL)) {
                 return;
             }
 
@@ -57,9 +59,13 @@ public class ChatConsumeService {
             chatRepository.save(new Chat(sender, receiver, chatroom, chatDto.content()));
 
             relayService.relayOrNotify(receiver, ChatDtoMapping.consumeToRelay(chatDto));
-            
+
         } catch (Exception e) {
+            if (idempotencyService.hasKey(idempotentKey)) {
+                idempotencyService.delete(idempotentKey);
+            }
             log.error("Error processing chat message", e);
+            throw e;
         }
     }
 
