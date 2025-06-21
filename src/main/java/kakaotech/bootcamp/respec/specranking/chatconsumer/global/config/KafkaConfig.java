@@ -7,8 +7,9 @@ import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,9 +21,11 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
-import org.springframework.kafka.support.serializer.JsonSerializer;
+import org.springframework.util.backoff.FixedBackOff;
 
 @Configuration
 public class KafkaConfig {
@@ -44,20 +47,6 @@ public class KafkaConfig {
     }
 
     @Bean
-    public ProducerFactory<String, ChatConsumeDto> chatMessageProducerFactory() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        return new DefaultKafkaProducerFactory<>(props);
-    }
-
-    @Bean
-    public KafkaTemplate<String, ChatConsumeDto> chatMessageKafkaProducerTemplate() {
-        return new KafkaTemplate<>(chatMessageProducerFactory());
-    }
-
-    @Bean
     public ConsumerFactory<String, ChatConsumeDto> chatMessageConsumerFactory() {
         Map<String, Object> consumerProps = getConsumerProps();
         Map<String, Object> deserializerProps = getDeserializerProps();
@@ -72,8 +61,39 @@ public class KafkaConfig {
                 new ErrorHandlingDeserializer<>(jsonDeserializer);
 
         return new DefaultKafkaConsumerFactory<>(consumerProps, keyDeserializer, valueDeserializer);
+    }
 
+    @Bean
+    public ProducerFactory<byte[], byte[]> dlqProducerFactory() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
+        return new DefaultKafkaProducerFactory<>(props);
+    }
 
+    @Bean
+    public KafkaTemplate<byte[], byte[]> dlqProducerTemplate() {
+        return new KafkaTemplate<>(dlqProducerFactory());
+    }
+
+    @Bean
+    public DefaultErrorHandler kafkaErrorHandler() {
+        DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(
+                dlqProducerTemplate(),
+                (r, e) -> new TopicPartition("chat-dlt", r.partition())
+        );
+
+        return new DefaultErrorHandler(recoverer, new FixedBackOff(1000L, 3L));
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, ChatConsumeDto> chatMessageContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, ChatConsumeDto> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(chatMessageConsumerFactory());
+        factory.setCommonErrorHandler(kafkaErrorHandler());
+        return factory;
     }
 
     @Bean
@@ -85,11 +105,11 @@ public class KafkaConfig {
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, ChatConsumeDto> chatMessageContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, ChatConsumeDto> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(chatMessageConsumerFactory());
-        return factory;
+    public NewTopic chatDltTopic() {
+        return TopicBuilder.name("chat-dlt")
+                .partitions(partitions_cnt)
+                .replicas(replicas_cnt)
+                .build();
     }
 
     private Map<String, Object> getConsumerProps() {
