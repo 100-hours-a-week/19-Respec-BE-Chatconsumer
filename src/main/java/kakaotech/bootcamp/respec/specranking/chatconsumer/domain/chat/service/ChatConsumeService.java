@@ -1,18 +1,22 @@
 package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service;
 
 
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.exception.InvalidChatStatusException.MESSAGE_INVALID_STATUS;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.common.type.ChatStatus.SENT;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.exception.UserNotFoundException.MESSAGE_USER_NOT_FOUND;
 
 import java.time.Duration;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.consume.ChatConsumeDto;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.mapping.ChatDtoMapping;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.entity.Chat;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.exception.InvalidChatStatusException;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.repository.ChatRepository;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chatparticipation.entity.ChatParticipation;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chatparticipation.repository.ChatParticipationRepository;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chatroom.entity.Chatroom;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chatroom.repository.ChatroomRepository;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.entity.User;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.exception.UserNotFoundException;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.repository.UserRepository;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.global.service.IdempotencyService;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +48,7 @@ public class ChatConsumeService {
         try {
 
             if (!chatDto.status().equals(SENT)) {
-                throw new IllegalArgumentException("Chat message is not sent");
+                throw new InvalidChatStatusException(MESSAGE_INVALID_STATUS);
             }
 
             if (!idempotencyService.setIfAbsent(idempotentKey, IDEMPOTENCY_TTL)) {
@@ -88,6 +92,6 @@ public class ChatConsumeService {
 
     private User findUser(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found: " + id));
+                .orElseThrow(() -> new UserNotFoundException(MESSAGE_USER_NOT_FOUND, id));
     }
 }
