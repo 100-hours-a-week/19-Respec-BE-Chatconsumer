@@ -1,4 +1,4 @@
-package kakaotech.bootcamp.respec.specranking.chatconsumer.global.service;
+package kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.redis.service;
 
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service;
+package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in;
 
 
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.exception.InvalidChatStatusException.MESSAGE_INVALID_STATUS;
@@ -11,6 +11,7 @@ import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.mappin
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.entity.Chat;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.exception.InvalidChatStatusException;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.repository.ChatRepository;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service.RelayService;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chatparticipation.entity.ChatParticipation;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chatparticipation.repository.ChatParticipationRepository;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chatroom.entity.Chatroom;
@@ -18,7 +19,7 @@ import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chatroom.reposi
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.entity.User;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.exception.UserNotFoundException;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.repository.UserRepository;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.global.service.IdempotencyService;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.redis.service.IdempotencyService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
