@@ -2,7 +2,7 @@ package kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure
 
 import java.util.HashMap;
 import java.util.Map;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.consume.ChatConsumeDto;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.Event.ChatConsumeEvent;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -47,17 +47,17 @@ public class KafkaConfig {
     }
 
     @Bean
-    public ConsumerFactory<String, ChatConsumeDto> chatMessageConsumerFactory() {
+    public ConsumerFactory<String, ChatConsumeEvent> chatMessageConsumerFactory() {
         Map<String, Object> consumerProps = getConsumerProps();
         Map<String, Object> deserializerProps = getDeserializerProps();
 
         ErrorHandlingDeserializer<String> keyDeserializer =
                 new ErrorHandlingDeserializer<>(new StringDeserializer());
 
-        JsonDeserializer<ChatConsumeDto> jsonDeserializer = new JsonDeserializer<>(ChatConsumeDto.class);
+        JsonDeserializer<ChatConsumeEvent> jsonDeserializer = new JsonDeserializer<>(ChatConsumeEvent.class);
         jsonDeserializer.configure(deserializerProps, false);
 
-        ErrorHandlingDeserializer<ChatConsumeDto> valueDeserializer =
+        ErrorHandlingDeserializer<ChatConsumeEvent> valueDeserializer =
                 new ErrorHandlingDeserializer<>(jsonDeserializer);
 
         return new DefaultKafkaConsumerFactory<>(consumerProps, keyDeserializer, valueDeserializer);
@@ -88,8 +88,8 @@ public class KafkaConfig {
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, ChatConsumeDto> chatMessageContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, ChatConsumeDto> factory =
+    public ConcurrentKafkaListenerContainerFactory<String, ChatConsumeEvent> chatMessageContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, ChatConsumeEvent> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(chatMessageConsumerFactory());
         factory.setCommonErrorHandler(kafkaErrorHandler());
@@ -122,7 +122,7 @@ public class KafkaConfig {
     private static Map<String, Object> getDeserializerProps() {
         Map<String, Object> deserializerProps = new HashMap<>();
         deserializerProps.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
-        deserializerProps.put(JsonDeserializer.VALUE_DEFAULT_TYPE, ChatConsumeDto.class.getName());
+        deserializerProps.put(JsonDeserializer.VALUE_DEFAULT_TYPE, ChatConsumeEvent.class.getName());
         return deserializerProps;
     }
 

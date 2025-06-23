@@ -1,8 +1,8 @@
-package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.consume;
+package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.Event;
 
 import kakaotech.bootcamp.respec.specranking.chatconsumer.global.common.type.ChatStatus;
 
-public record ChatConsumeDto(
+public record ChatConsumeEvent(
         String idempotentKey,
         Long senderId,
         Long receiverId,

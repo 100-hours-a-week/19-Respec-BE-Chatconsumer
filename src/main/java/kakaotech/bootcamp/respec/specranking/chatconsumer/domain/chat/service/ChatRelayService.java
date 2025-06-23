@@ -2,7 +2,7 @@ package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service;
 
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.common.type.NotificationTargetType.CHAT;
 
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.relay.ChatRelayDto;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.ChatRelayDto;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.notification.entity.Notification;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.notification.repository.NotificationRepository;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.entity.User;
@@ -15,7 +15,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class RelayService {
+public class ChatRelayService {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final WebClient webClient;

@@ -1,17 +1,17 @@
 package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in;
 
 
-import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.exception.InvalidChatStatusException.MESSAGE_INVALID_STATUS;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.exception.InvalidChatEventStatusException.MESSAGE_INVALID_STATUS;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.exception.UserNotFoundException.MESSAGE_USER_NOT_FOUND;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.common.type.ChatStatus.SENT;
 
 import java.time.Duration;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.consume.ChatConsumeDto;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.mapping.ChatDtoMapping;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.Event.ChatConsumeEvent;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.exception.InvalidChatEventStatusException;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.mapping.ChatDtoMapping;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.entity.Chat;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.exception.InvalidChatStatusException;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.repository.ChatRepository;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service.RelayService;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service.ChatRelayService;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chatparticipation.entity.ChatParticipation;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chatparticipation.repository.ChatParticipationRepository;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chatroom.entity.Chatroom;
@@ -34,7 +34,7 @@ public class ChatConsumeService {
 
     private static final Duration IDEMPOTENCY_TTL = Duration.ofMinutes(3);
 
-    private final RelayService relayService;
+    private final ChatRelayService chatRelayService;
     private final IdempotencyService idempotencyService;
     private final ChatRepository chatRepository;
     private final UserRepository userRepository;
@@ -43,13 +43,13 @@ public class ChatConsumeService {
 
 
     @KafkaListener(topics = "chat", containerFactory = "chatMessageContainerFactory")
-    public void handleChatMessage(ChatConsumeDto chatDto) {
+    public void handleChatMessage(ChatConsumeEvent chatDto) {
         final String idempotentKey = chatDto.idempotentKey();
 
         try {
 
             if (!chatDto.status().equals(SENT)) {
-                throw new InvalidChatStatusException(MESSAGE_INVALID_STATUS);
+                throw new InvalidChatEventStatusException(MESSAGE_INVALID_STATUS);
             }
 
             if (!idempotencyService.setIfAbsent(idempotentKey, IDEMPOTENCY_TTL)) {
@@ -63,7 +63,7 @@ public class ChatConsumeService {
 
             chatRepository.save(new Chat(sender, receiver, chatroom, chatDto.content()));
 
-            relayService.relayOrNotify(receiver, ChatDtoMapping.consumeToRelay(chatDto));
+            chatRelayService.relayOrNotify(receiver, ChatDtoMapping.consumeToRelay(chatDto));
 
         } catch (Exception e) {
             if (idempotencyService.hasKey(idempotentKey)) {
