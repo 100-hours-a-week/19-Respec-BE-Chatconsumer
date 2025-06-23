@@ -5,7 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.common.BaseTimeEntity;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.global.common.Entity.BaseTimeEntity;
 import lombok.Getter;
 
 @Entity

@@ -1,4 +1,4 @@
-package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.common;
+package kakaotech.bootcamp.respec.specranking.chatconsumer.global.common.Entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;

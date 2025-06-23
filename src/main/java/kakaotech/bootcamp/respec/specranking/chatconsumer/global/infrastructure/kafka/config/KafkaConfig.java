@@ -1,4 +1,4 @@
-package kakaotech.bootcamp.respec.specranking.chatconsumer.global.config;
+package kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.config;
 
 import java.util.HashMap;
 import java.util.Map;

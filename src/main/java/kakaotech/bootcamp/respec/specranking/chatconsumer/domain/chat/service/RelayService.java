@@ -1,6 +1,6 @@
 package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service;
 
-import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.common.type.NotificationTargetType.CHAT;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.common.type.NotificationTargetType.CHAT;
 
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.relay.ChatRelayDto;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.notification.entity.Notification;

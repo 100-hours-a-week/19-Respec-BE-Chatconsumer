@@ -1,4 +1,4 @@
-package kakaotech.bootcamp.respec.specranking.chatconsumer.global.config;
+package kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.redis.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
