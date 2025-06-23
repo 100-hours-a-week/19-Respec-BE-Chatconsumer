@@ -1,4 +1,4 @@
-package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.relay;
+package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto;
 
 public record ChatRelayDto(
         Long senderId,
