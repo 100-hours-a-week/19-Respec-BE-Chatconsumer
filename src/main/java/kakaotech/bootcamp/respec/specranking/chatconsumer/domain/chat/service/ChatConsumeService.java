@@ -2,8 +2,8 @@ package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service;
 
 
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.exception.InvalidChatStatusException.MESSAGE_INVALID_STATUS;
-import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.common.type.ChatStatus.SENT;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.exception.UserNotFoundException.MESSAGE_USER_NOT_FOUND;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.common.type.ChatStatus.SENT;
 
 import java.time.Duration;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.consume.ChatConsumeDto;

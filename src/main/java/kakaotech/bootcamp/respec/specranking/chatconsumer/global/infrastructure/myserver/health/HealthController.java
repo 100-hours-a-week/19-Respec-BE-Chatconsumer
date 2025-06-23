@@ -1,4 +1,4 @@
-package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.health;
+package kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.myserver.health;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
