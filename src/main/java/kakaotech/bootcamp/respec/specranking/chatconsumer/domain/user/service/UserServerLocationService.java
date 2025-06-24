@@ -1,5 +1,7 @@
 package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.service;
 
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.constant.UserServerLocationServiceConstant.REDIS_USER_KEY_PREFIX;
+
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -8,7 +10,6 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class UserServerLocationService {
-    private static final String REDIS_USER_KEY_PREFIX = "chat:user:";
     private final RedisTemplate<String, Object> redisTemplate;
 
     public Optional<String> getServerUrl(Long userId) {
