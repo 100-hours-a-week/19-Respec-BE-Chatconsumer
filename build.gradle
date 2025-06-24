@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.5.0'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
 }
 
 group = 'kakaotech.bootcamp.respec.specranking'
@@ -49,4 +50,24 @@ tasks.named('test') {
 
 clean {
     delete file('src/main/generated')
+}
+
+test {
+    finalizedBy jacocoTestReport
+}
+
+jacoco {
+    toolVersion = "0.8.9"
+}
+
+jacocoTestReport {
+    reports {
+        xml.required = true
+        csv.required = false
+        html.required = true
+        xml.outputLocation = layout.buildDirectory.file('reports/jacoco/lms.app.xml')
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
+    dependsOn test
+    finalizedBy 'jacocoTestCoverageVerification'
 }
