@@ -7,9 +7,11 @@ import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.notification.re
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class NotificationService {
     private final NotificationRepository notificationRepository;
 
