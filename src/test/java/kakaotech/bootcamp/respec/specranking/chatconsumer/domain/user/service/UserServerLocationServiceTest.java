@@ -30,41 +30,36 @@ class UserServerLocationServiceTest {
     @Mock
     ValueOperations<String, Object> valueOperations;
 
+    final Long exampleUserId = 123L;
+    final String redisKey = REDIS_USER_KEY_PREFIX + exampleUserId;
+
     @DisplayName("Redis에 서버 URL이 있을 경우 Optional로 반환한다")
     @Test
     void returns_optional_when_server_url_exists_in_redis() {
         // given
-        final Long EXAMPLE_USER_ID = 123L;
-        final String EXAMPLE_SERVER_URL = "192.168.1.100:8080";
-
-        final Long userId = EXAMPLE_USER_ID;
-        final String serverUrl = EXAMPLE_SERVER_URL;
-        final String redisKey = REDIS_USER_KEY_PREFIX + userId;
+        final String exampleServerUrl = "192.168.1.100:8080";
 
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get(redisKey)).willReturn(serverUrl);
+        given(valueOperations.get(redisKey)).willReturn(exampleServerUrl);
 
         // when
-        Optional<String> result = userServerLocationService.getServerUrl(userId);
+        Optional<String> result = userServerLocationService.getServerUrl(exampleUserId);
 
         // then
         verify(valueOperations).get(redisKey);
         assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(serverUrl);
+        assertThat(result.get()).isEqualTo(exampleServerUrl);
     }
 
     @DisplayName("Redis에 서버 URL이 없을 경우 빈 Optional을 반환한다")
     @Test
     void returns_empty_optional_when_server_url_does_not_exist_in_redis() {
         // given
-        final Long userId = 123L;
-        final String redisKey = REDIS_USER_KEY_PREFIX + userId;
-
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
         given(valueOperations.get(redisKey)).willReturn(null);
 
         // when
-        Optional<String> result = userServerLocationService.getServerUrl(userId);
+        Optional<String> result = userServerLocationService.getServerUrl(exampleUserId);
 
         // then
         verify(valueOperations).get(redisKey);
@@ -75,15 +70,13 @@ class UserServerLocationServiceTest {
     @Test
     void throws_exception_when_redis_value_is_not_string() {
         // given
-        final Long userId = 123L;
-        final String redisKey = REDIS_USER_KEY_PREFIX + userId;
-        final Integer wrongTypeValue = 12345;
+        final Integer wrongTypeValueExample = 12345;
 
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get(redisKey)).willReturn(wrongTypeValue);
+        given(valueOperations.get(redisKey)).willReturn(wrongTypeValueExample);
 
         // when & then
-        assertThatThrownBy(() -> userServerLocationService.getServerUrl(userId))
+        assertThatThrownBy(() -> userServerLocationService.getServerUrl(exampleUserId))
                 .isInstanceOf(InvalidRedisValueTypeException.class)
                 .hasMessageContaining(NOT_STRING_REDIS_VALUE_EXCEPTION);
     }
