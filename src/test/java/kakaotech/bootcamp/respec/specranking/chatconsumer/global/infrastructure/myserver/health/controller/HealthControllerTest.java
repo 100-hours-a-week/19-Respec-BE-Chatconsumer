@@ -1,4 +1,4 @@
-package kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.myserver.health;
+package kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.myserver.health.controller;
 
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.myserver.health.constant.HealthControllerTestConstant.PATH_URL;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
