@@ -1,6 +1,7 @@
 package kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.redis.service;
 
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.redis.constant.IdempotencyServiceConstant.DUMMY_VALUE;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.redis.constant.IdempotencyServiceTestConstant.KEY_VALUE;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.BDDMockito.given;
@@ -32,33 +33,33 @@ class IdempotencyServiceTest {
     @DisplayName("setIfAbsent 호출 시 키가 없을 경우 키를 등록한다")
     void setIfAbsent_whenKeyIsAbsent_thenRegistersKey() {
         // given
-        final String idempotentKey = "new-key";
+        final String newKey = KEY_VALUE;
         final long DUMMY_SECONDS = 5;
         final Duration ttl = Duration.ofSeconds(DUMMY_SECONDS);
 
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.setIfAbsent(idempotentKey, DUMMY_VALUE, ttl)).willReturn(true);
+        given(valueOperations.setIfAbsent(newKey, DUMMY_VALUE, ttl)).willReturn(true);
 
         // when
-        idempotencyService.setIfAbsent(idempotentKey, ttl);
+        idempotencyService.setIfAbsent(newKey, ttl);
 
         // then
-        verify(valueOperations).setIfAbsent(idempotentKey, DUMMY_VALUE, ttl);
+        verify(valueOperations).setIfAbsent(newKey, DUMMY_VALUE, ttl);
     }
 
     @Test
     @DisplayName("setIfAbsent 호출 시 키가 있을 경우 false를 반환한다")
     void setIfAbsent_whenKeyExists_thenReturnsFalse() {
         // given
-        final String idempotentKey = "existing-key";
+        final String existingKey = KEY_VALUE;
         final long DUMMY_SECONDS = 5;
         final Duration ttl = Duration.ofSeconds(DUMMY_SECONDS);
 
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.setIfAbsent(idempotentKey, DUMMY_VALUE, ttl)).willReturn(false);
+        given(valueOperations.setIfAbsent(existingKey, DUMMY_VALUE, ttl)).willReturn(false);
 
         // when
-        final Boolean result = idempotencyService.setIfAbsent(idempotentKey, ttl);
+        final Boolean result = idempotencyService.setIfAbsent(existingKey, ttl);
 
         // then
         assertFalse(result);
@@ -68,11 +69,11 @@ class IdempotencyServiceTest {
     @DisplayName("hasKey 호출 시 키가 있을 경우 true를 반환한다")
     void hasKey_whenKeyExists_thenReturnsTrue() {
         // given
-        final String idempotentKey = "key-present";
-        given(redisTemplate.hasKey(idempotentKey)).willReturn(true);
+        final String existingKey = KEY_VALUE;
+        given(redisTemplate.hasKey(existingKey)).willReturn(true);
 
         // when
-        final boolean result = idempotencyService.hasKey(idempotentKey);
+        final boolean result = idempotencyService.hasKey(existingKey);
 
         // then
         assertTrue(result);
@@ -83,11 +84,11 @@ class IdempotencyServiceTest {
     @DisplayName("hasKey 호출 시 키가 없을 경우 false를 반환한다")
     void hasKey_whenKeyAbsent_thenReturnsFalse() {
         // given
-        final String idempotentKey = "key-absent";
-        given(redisTemplate.hasKey(idempotentKey)).willReturn(false);
+        final String absentKey = KEY_VALUE;
+        given(redisTemplate.hasKey(absentKey)).willReturn(false);
 
         // when
-        final boolean result = idempotencyService.hasKey(idempotentKey);
+        final boolean result = idempotencyService.hasKey(absentKey);
 
         // then
         assertFalse(result);
@@ -97,12 +98,12 @@ class IdempotencyServiceTest {
     @DisplayName("delete 호출 시 해당 키가 삭제되어야 한다")
     void delete_whenCalled_thenDeletesKey() {
         // given
-        final String idempotentKey = "delete-me";
+        final String keyToBeDeleted = KEY_VALUE;
 
         // when
-        idempotencyService.delete(idempotentKey);
+        idempotencyService.delete(keyToBeDeleted);
 
         // then
-        verify(redisTemplate).delete(idempotentKey);
+        verify(redisTemplate).delete(keyToBeDeleted);
     }
 }
