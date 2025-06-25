@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 
 import java.util.Optional;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.exception.InvalidRedisValueTypeException;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.fixture.UserFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,7 +31,7 @@ class UserServerLocationServiceTest {
     @Mock
     ValueOperations<String, Object> valueOperations;
 
-    final Long exampleUserId = 123L;
+    final Long exampleUserId = UserFixture.getId();
     final String redisKey = REDIS_USER_KEY_PREFIX + exampleUserId;
 
     @DisplayName("Redis에 서버 URL이 있을 경우 Optional로 반환한다")
