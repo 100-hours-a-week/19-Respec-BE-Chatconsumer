@@ -2,6 +2,7 @@ package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.service;
 
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.constant.UserServerLocationServiceConstant.NOT_STRING_REDIS_VALUE_EXCEPTION;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.constant.UserServerLocationServiceConstant.REDIS_USER_KEY_PREFIX;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.constant.UrlConstant.EXAMPLE_URL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
@@ -38,7 +39,7 @@ class UserServerLocationServiceTest {
     @Test
     void returns_optional_when_server_url_exists_in_redis() {
         // given
-        final String exampleServerUrl = "192.168.1.100:8080";
+        final String exampleServerUrl = EXAMPLE_URL;
 
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
         given(valueOperations.get(redisKey)).willReturn(exampleServerUrl);

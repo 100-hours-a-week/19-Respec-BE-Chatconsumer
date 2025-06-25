@@ -5,7 +5,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 public class UserFixture {
 
-    private static final Long RECEIVER_ID = 1L;
+    private static final Long USER_ID = 1L;
     private static final String LOGIN_ID = "test@example.com";
     private static final String PASSWORD = "test-password";
     private static final String PROFILE_IMAGE_URL = "http://tes.com/example.jpg";
@@ -15,7 +15,11 @@ public class UserFixture {
 
     public static User create() {
         User testUser = new User(LOGIN_ID, PASSWORD, PROFILE_IMAGE_URL, NICKNAME, IS_OPEN_SPEC);
-        ReflectionTestUtils.setField(testUser, PRIMARY_KEY_FIELD, RECEIVER_ID);
+        ReflectionTestUtils.setField(testUser, PRIMARY_KEY_FIELD, USER_ID);
         return testUser;
+    }
+
+    public static Long getId() {
+        return USER_ID;
     }
 }

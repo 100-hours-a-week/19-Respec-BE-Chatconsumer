@@ -1,5 +1,6 @@
 package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service;
 
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.constant.UrlConstant.EXAMPLE_URL;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
@@ -50,7 +51,7 @@ class ChatDeliveryServiceTest {
     @DisplayName("Optional에 서버 IP가 있을 경우 relay가 호출된다")
     void calls_relay_when_server_ip_exists() {
         // given
-        final String serverIpExample = "192.168.1.100:8080";
+        final String serverIpExample = EXAMPLE_URL;
 
         given(userServerLocationService.getServerUrl(receiver.getId())).willReturn(Optional.of(serverIpExample));
 
