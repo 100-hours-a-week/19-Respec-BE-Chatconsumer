@@ -70,6 +70,19 @@ jacocoTestReport {
         xml.outputLocation = layout.buildDirectory.file('reports/jacoco/lms.app.xml')
         html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
     }
+
+    def Qdomains = []
+    for (qPattern in "**/QA".."**/QZ") {
+        Qdomains.add(qPattern + "*")
+    }
+
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it,
+                    exclude: [] + Qdomains)
+        }))
+    }
+
     dependsOn test
     finalizedBy 'jacocoTestCoverageVerification'
 }
