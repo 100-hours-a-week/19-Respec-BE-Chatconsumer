@@ -8,10 +8,10 @@ import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.common.t
 import java.time.Duration;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.Event.ChatConsumeEvent;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.exception.InvalidChatEventStatusException;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.mapping.ChatDtoMapping;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.mapping.ChatConsumeEventMapping;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.entity.Chat;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.repository.ChatRepository;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service.ChatRelayService;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service.ChatDeliveryService;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chatparticipation.entity.ChatParticipation;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chatparticipation.repository.ChatParticipationRepository;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chatroom.entity.Chatroom;
@@ -34,7 +34,7 @@ public class ChatConsumeService {
 
     private static final Duration IDEMPOTENCY_TTL = Duration.ofMinutes(3);
 
-    private final ChatRelayService chatRelayService;
+    private final ChatDeliveryService chatDeliveryService;
     private final IdempotencyService idempotencyService;
     private final ChatRepository chatRepository;
     private final UserRepository userRepository;
@@ -63,7 +63,7 @@ public class ChatConsumeService {
 
             chatRepository.save(new Chat(sender, receiver, chatroom, chatDto.content()));
 
-            chatRelayService.relayOrNotify(receiver, ChatDtoMapping.consumeToRelay(chatDto));
+            chatDeliveryService.relayOrNotify(receiver, ChatConsumeEventMapping.consumeToRelay(chatDto));
 
         } catch (Exception e) {
             if (idempotencyService.hasKey(idempotentKey)) {

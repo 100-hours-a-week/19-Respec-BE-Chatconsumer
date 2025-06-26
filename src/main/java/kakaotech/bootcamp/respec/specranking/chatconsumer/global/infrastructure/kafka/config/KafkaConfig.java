@@ -1,50 +1,39 @@
 package kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.config;
 
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.constant.KafkaConfigConstant.CHAT_CONSUMER_GROUP;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.constant.KafkaConfigConstant.CHAT_DLT_TOPIC;
+
 import java.util.HashMap;
 import java.util.Map;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.Event.ChatConsumeEvent;
-import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.clients.admin.NewTopic;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.ChatRelayDto;
+import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.springframework.beans.factory.annotation.Value;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
-import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.util.backoff.FixedBackOff;
 
 @Configuration
+@RequiredArgsConstructor
 public class KafkaConfig {
 
-    @Value("${spring.kafka.bootstrap-servers}")
-    private String bootstrapServers;
-
-    @Value("${spring.kafka.chat.topic.partitions}")
-    private int partitions_cnt;
-
-    @Value("${spring.kafka.chat.topic.replicas}")
-    private short replicas_cnt;
-
-    @Bean
-    public KafkaAdmin kafkaAdmin() {
-        Map<String, Object> configs = new HashMap<>();
-        configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        return new KafkaAdmin(configs);
-    }
+    private final KafkaProperties kafkaProperties;
 
     @Bean
     public ConsumerFactory<String, ChatConsumeEvent> chatMessageConsumerFactory() {
@@ -66,9 +55,19 @@ public class KafkaConfig {
     @Bean
     public ProducerFactory<byte[], byte[]> dlqProducerFactory() {
         Map<String, Object> props = new HashMap<>();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
+        return new DefaultKafkaProducerFactory<>(props);
+    }
+
+    @Bean
+    public ProducerFactory<String, ChatRelayDto> relayDltProducerFactory() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+
         return new DefaultKafkaProducerFactory<>(props);
     }
 
@@ -81,7 +80,7 @@ public class KafkaConfig {
     public DefaultErrorHandler kafkaErrorHandler() {
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(
                 dlqProducerTemplate(),
-                (r, e) -> new TopicPartition("chat-dlt", r.partition())
+                (r, e) -> new TopicPartition(CHAT_DLT_TOPIC, r.partition())
         );
 
         return new DefaultErrorHandler(recoverer, new FixedBackOff(1000L, 3L));
@@ -97,25 +96,14 @@ public class KafkaConfig {
     }
 
     @Bean
-    public NewTopic chatTopic() {
-        return TopicBuilder.name("chat")
-                .partitions(partitions_cnt)
-                .replicas(replicas_cnt)
-                .build();
-    }
-
-    @Bean
-    public NewTopic chatDltTopic() {
-        return TopicBuilder.name("chat-dlt")
-                .partitions(partitions_cnt)
-                .replicas(replicas_cnt)
-                .build();
+    public KafkaTemplate<String, ChatRelayDto> relayDltKafkaTemplate() {
+        return new KafkaTemplate<>(relayDltProducerFactory());
     }
 
     private Map<String, Object> getConsumerProps() {
         Map<String, Object> consumerProps = new HashMap<>();
-        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "chat-consumer-group");
+        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
+        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, CHAT_CONSUMER_GROUP);
         return consumerProps;
     }
 

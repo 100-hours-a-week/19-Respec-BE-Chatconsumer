@@ -4,8 +4,4 @@ public class ChatEventException extends RuntimeException {
     public ChatEventException(String message) {
         super(message);
     }
-
-    public ChatEventException(String message, Throwable cause) {
-        super(message, cause);
-    }
 }
