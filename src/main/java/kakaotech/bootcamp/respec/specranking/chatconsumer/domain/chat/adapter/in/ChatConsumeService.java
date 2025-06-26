@@ -8,7 +8,7 @@ import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.common.t
 import java.time.Duration;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.Event.ChatConsumeEvent;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.exception.InvalidChatEventStatusException;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.mapping.ChatDtoMapping;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.mapping.ChatConsumeEventMapping;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.entity.Chat;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.repository.ChatRepository;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service.ChatDeliveryService;
@@ -63,7 +63,7 @@ public class ChatConsumeService {
 
             chatRepository.save(new Chat(sender, receiver, chatroom, chatDto.content()));
 
-            chatDeliveryService.relayOrNotify(receiver, ChatDtoMapping.consumeToRelay(chatDto));
+            chatDeliveryService.relayOrNotify(receiver, ChatConsumeEventMapping.consumeToRelay(chatDto));
 
         } catch (Exception e) {
             if (idempotencyService.hasKey(idempotentKey)) {

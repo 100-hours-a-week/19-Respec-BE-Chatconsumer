@@ -9,7 +9,7 @@ import static org.mockito.Mockito.verify;
 
 import java.util.Optional;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.ChatRelayDto;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.fixture.ChatFixture;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.fixture.ChatRelayFixture;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.notification.service.NotificationService;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.entity.User;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.fixture.UserFixture;
@@ -44,7 +44,7 @@ class ChatDeliveryServiceTest {
     @BeforeEach
     void setUp() {
         receiver = UserFixture.create();
-        chatRelayDto = ChatFixture.create();
+        chatRelayDto = ChatRelayFixture.create();
     }
 
     @Test
