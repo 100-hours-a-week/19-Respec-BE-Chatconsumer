@@ -4,4 +4,6 @@ public class ChatRelayServiceConstant {
     public static final String SCHEME = "http://";
     public static final String CHAT_RELAY_API_PATH = "/api/chat/relay";
     public static final String CHAT_DLQ_TOPIC = "chat-dlq";
+    public static Integer TOTAL_REQUEST_CNT = 3;
+    public static Integer WAIT_MAX_SECONDS = 3;
 }

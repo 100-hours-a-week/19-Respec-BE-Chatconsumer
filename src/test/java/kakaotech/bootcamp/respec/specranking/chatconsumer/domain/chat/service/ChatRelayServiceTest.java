@@ -1,6 +1,8 @@
 package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service;
 
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.constant.ChatRelayServiceConstant.CHAT_DLQ_TOPIC;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.constant.ChatRelayServiceConstant.TOTAL_REQUEST_CNT;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.constant.ChatRelayServiceConstant.WAIT_MAX_SECONDS;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.constant.UrlConstant.LOCALHOST;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -8,6 +10,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -26,7 +30,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.web.reactive.function.client.WebClient;
 
 @ExtendWith(MockitoExtension.class)
 class ChatRelayServiceTest {
@@ -48,10 +51,10 @@ class ChatRelayServiceTest {
     void setUp() throws IOException {
         mockWebServer = new MockWebServer();
         mockWebServer.start();
-        WebClient realWebClient = WebClient.builder().build();
 
         relayDltProducerFactory = Mockito.mock(KafkaTemplate.class);
-        chatRelayService = new ChatRelayService(realWebClient, relayDltProducerFactory);
+
+        chatRelayService = new ChatRelayService(relayDltProducerFactory);
         partnerServerIp = LOCALHOST + ":" + mockWebServer.getPort();
     }
 
@@ -72,7 +75,8 @@ class ChatRelayServiceTest {
         chatRelayService.relay(partnerServerIp, chatRelayDto);
 
         // then
-        RecordedRequest recordedRequest = mockWebServer.takeRequest(5, TimeUnit.SECONDS);
+        RecordedRequest recordedRequest = mockWebServer.takeRequest(WAIT_MAX_SECONDS * TOTAL_REQUEST_CNT,
+                TimeUnit.SECONDS);
         String requestBody = recordedRequest.getBody().readUtf8();
 
         ChatRelayDto gottenJson = objectMapper.readValue(requestBody, ChatRelayDto.class);
@@ -88,7 +92,7 @@ class ChatRelayServiceTest {
         // given
         mockWebServer.enqueue(new MockResponse()
                 .setBody(VIRTUAL_SERVER_BODY_MESSAGE)
-                .addHeader("Content-Type", "application/json")
+                .addHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
                 .setResponseCode(HttpStatus.OK.value()));
 
         // when
@@ -99,10 +103,10 @@ class ChatRelayServiceTest {
     }
 
     @Test
-    @DisplayName("서버 에러 응답 시 최대 3회 retry 한다")
+    @DisplayName("서버 에러 응답 시 정해진 수 만큼 retry 한다")
     void relay_Retry() throws Exception {
         // given
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < TOTAL_REQUEST_CNT + 1; i++) {
             mockWebServer.enqueue(new MockResponse().setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
                     .setBody(VIRTUAL_SERVER_EXCEPTION_MESSAGE));
         }
@@ -111,10 +115,10 @@ class ChatRelayServiceTest {
         chatRelayService.relay(partnerServerIp, chatRelayDto);
 
         // then
-        await().atMost(2, TimeUnit.SECONDS)
+        await().atMost(WAIT_MAX_SECONDS * TOTAL_REQUEST_CNT, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
                     int actualRequestCount = mockWebServer.getRequestCount();
-                    assertThat(actualRequestCount).isEqualTo(3);
+                    assertThat(actualRequestCount).isEqualTo(TOTAL_REQUEST_CNT);
                 });
     }
 
@@ -122,7 +126,7 @@ class ChatRelayServiceTest {
     @DisplayName("retry 결과 모두 에러일 경우 DLQ에 넣는다.")
     void relay_Retry_ERROR_SEND_DLQ() throws Exception {
         // given
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < TOTAL_REQUEST_CNT + 1; i++) {
             mockWebServer.enqueue(new MockResponse().setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
                     .setBody(VIRTUAL_SERVER_EXCEPTION_MESSAGE));
         }
@@ -131,7 +135,7 @@ class ChatRelayServiceTest {
         chatRelayService.relay(partnerServerIp, chatRelayDto);
 
         // then
-        await().atMost(2, TimeUnit.SECONDS)
+        await().atMost(WAIT_MAX_SECONDS * TOTAL_REQUEST_CNT, TimeUnit.SECONDS)
                 .untilAsserted(() ->
                         verify(relayDltProducerFactory)
                                 .send(eq(CHAT_DLQ_TOPIC), any(), eq(chatRelayDto))
@@ -139,10 +143,10 @@ class ChatRelayServiceTest {
     }
 
     @Test
-    @DisplayName("retry 3회 안에 정상 응답이 있을 경우, DLQ 전송하지 않는다.")
+    @DisplayName("retry에 정상 응답이 있을 경우, DLQ 전송하지 않는다.")
     void relay_Retry_Not_Dlq_Send() throws Exception {
         // given
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < TOTAL_REQUEST_CNT - 1; i++) {
             mockWebServer.enqueue(new MockResponse().setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
                     .setBody(VIRTUAL_SERVER_EXCEPTION_MESSAGE));
         }
@@ -153,7 +157,7 @@ class ChatRelayServiceTest {
         chatRelayService.relay(partnerServerIp, chatRelayDto);
 
         // then
-        await().atMost(2, TimeUnit.SECONDS)
+        await().atMost(WAIT_MAX_SECONDS * TOTAL_REQUEST_CNT, TimeUnit.SECONDS)
                 .untilAsserted(() -> verify(relayDltProducerFactory, never()).send(any(), any(), any()));
     }
 
