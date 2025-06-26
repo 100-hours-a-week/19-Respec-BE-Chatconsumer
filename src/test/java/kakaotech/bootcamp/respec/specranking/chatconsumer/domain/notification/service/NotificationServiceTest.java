@@ -36,7 +36,7 @@ class NotificationServiceTest {
 
     @Test
     @DisplayName("기존 알림이 없으면 알림을 생성한다")
-    void creates_notification_when_not_exists() {
+    void createsNotificationWhenNotExists() {
         // given
         given(notificationRepository.existsByUserIdAndTargetName(receiver.getId(), CHAT)).willReturn(false);
 
@@ -49,7 +49,7 @@ class NotificationServiceTest {
 
     @Test
     @DisplayName("기존 알림이 있으면 저장하지 않는다")
-    void does_not_create_notification_when_exists() {
+    void doesNotCreateNotificationWhenExists() {
         // given
         given(notificationRepository.existsByUserIdAndTargetName(receiver.getId(), CHAT)).willReturn(true);
 

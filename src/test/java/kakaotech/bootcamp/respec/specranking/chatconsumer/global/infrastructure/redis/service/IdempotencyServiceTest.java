@@ -31,7 +31,7 @@ class IdempotencyServiceTest {
 
     @Test
     @DisplayName("setIfAbsent 호출 시 키가 없을 경우 키를 등록한다")
-    void setIfAbsent_whenKeyIsAbsent_thenRegistersKey() {
+    void setIfAbsentWhenKeyIsAbsentThenRegistersKey() {
         // given
         final String newKey = KEY_VALUE;
         final long DUMMY_SECONDS = 5;
@@ -49,7 +49,7 @@ class IdempotencyServiceTest {
 
     @Test
     @DisplayName("setIfAbsent 호출 시 키가 있을 경우 false를 반환한다")
-    void setIfAbsent_whenKeyExists_thenReturnsFalse() {
+    void setIfAbsentWhenKeyExistsThenReturnsFalse() {
         // given
         final String existingKey = KEY_VALUE;
         final long DUMMY_SECONDS = 5;
@@ -67,7 +67,7 @@ class IdempotencyServiceTest {
 
     @Test
     @DisplayName("hasKey 호출 시 키가 있을 경우 true를 반환한다")
-    void hasKey_whenKeyExists_thenReturnsTrue() {
+    void hasKeyWhenKeyExistsThenReturnsTrue() {
         // given
         final String existingKey = KEY_VALUE;
         given(redisTemplate.hasKey(existingKey)).willReturn(true);
@@ -82,7 +82,7 @@ class IdempotencyServiceTest {
 
     @Test
     @DisplayName("hasKey 호출 시 키가 없을 경우 false를 반환한다")
-    void hasKey_whenKeyAbsent_thenReturnsFalse() {
+    void hasKeyWhenKeyIsAbsentThenReturnsFalse() {
         // given
         final String absentKey = KEY_VALUE;
         given(redisTemplate.hasKey(absentKey)).willReturn(false);
@@ -96,7 +96,7 @@ class IdempotencyServiceTest {
 
     @Test
     @DisplayName("delete 호출 시 해당 키가 삭제되어야 한다")
-    void delete_whenCalled_thenDeletesKey() {
+    void deleteWhenCalledThenDeletesKey() {
         // given
         final String keyToBeDeleted = KEY_VALUE;
 

@@ -37,7 +37,7 @@ class UserServerLocationServiceTest {
 
     @DisplayName("Redis에 서버 URL이 있을 경우 Optional로 반환한다")
     @Test
-    void returns_optional_when_server_url_exists_in_redis() {
+    void returnsOptionalWhenServerUrlExistsInRedis() {
         // given
         final String exampleServerUrl = EXAMPLE_URL;
 
@@ -55,7 +55,7 @@ class UserServerLocationServiceTest {
 
     @DisplayName("Redis에 서버 URL이 없을 경우 빈 Optional을 반환한다")
     @Test
-    void returns_empty_optional_when_server_url_does_not_exist_in_redis() {
+    void returnsEmptyOptionalWhenServerUrlDoesNotExistInRedis() {
         // given
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
         given(valueOperations.get(redisKey)).willReturn(null);
@@ -70,7 +70,7 @@ class UserServerLocationServiceTest {
 
     @DisplayName("Redis에 서버 URL 타입이 String이 아닌 경우 예외가 발생한다")
     @Test
-    void throws_exception_when_redis_value_is_not_string() {
+    void throwsExceptionWhenRedisValueIsNotString() {
         // given
         final Integer wrongTypeValueExample = 12345;
 

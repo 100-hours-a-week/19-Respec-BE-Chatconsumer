@@ -24,11 +24,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @ExtendWith(MockitoExtension.class)
 class ChatRelayServiceTest {
+
+    private final String VIRTUAL_SERVER_EXCEPTION_MESSAGE = "VIRTUAL_SERVER_EXCEPTION_MESSAGE";
+    private final String VIRTUAL_SERVER_BODY_MESSAGE = "VIRTUAL_SERVER_BODY_MESSAGE";
 
     private final ChatRelayDto chatRelayDto = ChatRelayFixture.create();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -58,12 +62,11 @@ class ChatRelayServiceTest {
 
     @Test
     @DisplayName("성공적으로 메시지를 relay한다")
-    void relay_Success() throws Exception {
+    void relaySuccess() throws Exception {
         // given
         mockWebServer.enqueue(new MockResponse()
-                .setBody("Success")
-                .addHeader("Content-Type", "application/json")
-                .setResponseCode(200));
+                .setBody(VIRTUAL_SERVER_BODY_MESSAGE)
+                .setResponseCode(HttpStatus.OK.value()));
 
         // when
         chatRelayService.relay(partnerServerIp, chatRelayDto);
@@ -84,9 +87,9 @@ class ChatRelayServiceTest {
     void relay_Success_not_send_dlq() throws Exception {
         // given
         mockWebServer.enqueue(new MockResponse()
-                .setBody("Success")
+                .setBody(VIRTUAL_SERVER_BODY_MESSAGE)
                 .addHeader("Content-Type", "application/json")
-                .setResponseCode(200));
+                .setResponseCode(HttpStatus.OK.value()));
 
         // when
         chatRelayService.relay(partnerServerIp, chatRelayDto);
@@ -100,7 +103,8 @@ class ChatRelayServiceTest {
     void relay_Retry() throws Exception {
         // given
         for (int i = 0; i < 4; i++) {
-            mockWebServer.enqueue(new MockResponse().setResponseCode(500).setBody("Internal Server Error"));
+            mockWebServer.enqueue(new MockResponse().setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                    .setBody(VIRTUAL_SERVER_EXCEPTION_MESSAGE));
         }
 
         // when
@@ -119,7 +123,8 @@ class ChatRelayServiceTest {
     void relay_Retry_ERROR_SEND_DLQ() throws Exception {
         // given
         for (int i = 0; i < 4; i++) {
-            mockWebServer.enqueue(new MockResponse().setResponseCode(500).setBody("Internal Server Error"));
+            mockWebServer.enqueue(new MockResponse().setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                    .setBody(VIRTUAL_SERVER_EXCEPTION_MESSAGE));
         }
 
         // when
@@ -137,9 +142,12 @@ class ChatRelayServiceTest {
     @DisplayName("retry 3회 안에 정상 응답이 있을 경우, DLQ 전송하지 않는다.")
     void relay_Retry_Not_Dlq_Send() throws Exception {
         // given
-        mockWebServer.enqueue(new MockResponse().setResponseCode(500).setBody("Internal Server Error"));
-        mockWebServer.enqueue(new MockResponse().setResponseCode(500).setBody("Internal Server Error"));
-        mockWebServer.enqueue(new MockResponse().setBody("Success").setResponseCode(200));
+        for (int i = 0; i < 2; i++) {
+            mockWebServer.enqueue(new MockResponse().setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                    .setBody(VIRTUAL_SERVER_EXCEPTION_MESSAGE));
+        }
+        mockWebServer.enqueue(
+                new MockResponse().setBody(VIRTUAL_SERVER_BODY_MESSAGE).setResponseCode(HttpStatus.OK.value()));
 
         // when
         chatRelayService.relay(partnerServerIp, chatRelayDto);

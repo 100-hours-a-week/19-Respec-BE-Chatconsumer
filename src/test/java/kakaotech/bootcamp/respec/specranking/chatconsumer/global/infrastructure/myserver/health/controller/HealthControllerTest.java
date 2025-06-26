@@ -18,7 +18,7 @@ class HealthControllerTest {
 
     @Test
     @DisplayName("GET /api/health 요청 시 OK(200)을 반환한다")
-    void health_check_request_returns_200() throws Exception {
+    void healthCheckRequestReturns200() throws Exception {
         // when, then
         mockMvc.perform(get(PATH_URL))
                 .andExpect(status().isOk());
