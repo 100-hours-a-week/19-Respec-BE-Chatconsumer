@@ -110,6 +110,10 @@ Redis 기반 Idempotency 서비스를 통해 3분간 동일한 메시지의 중�
 
 WebClient를 활용하여 논블로킹 방식의 외부 서버 통신을 구현했습니다.
 
+## 📚 추가 자료
+
+- **메인 서버**: [19-Respec-BE](https://github.com/100-hours-a-week/19-Respec-BE/tree/main) - BackEnd 메인 서버 레포지토리
+
 ---
 
 *"실제 운영 환경을 고려한 안정적인 메시지 처리 시스템을 구축했습니다."*
