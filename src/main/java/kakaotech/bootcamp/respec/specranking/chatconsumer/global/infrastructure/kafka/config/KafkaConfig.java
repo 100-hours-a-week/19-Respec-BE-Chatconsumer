@@ -2,7 +2,7 @@ package kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure
 
 import java.util.HashMap;
 import java.util.Map;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.Event.ChatConsumeEvent;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.Event.ChatConsumeEvent;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
