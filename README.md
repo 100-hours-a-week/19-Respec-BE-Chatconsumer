@@ -17,7 +17,7 @@ Kafka를 활용한 실시간 채팅 메시지 처리 시스템으로, Spring Boo
 - **Kafka 메시지 소비**: `@KafkaListener`를 통한 채팅 메시지 실시간 처리
 - **채팅 메시지 저장**: MySQL을 활용한 채팅 이력 영구 보관
 - **메시지 전달**: WebClient를 통한 메인 서버로의 메시지 릴레이
-- **알림 시스템**: 사용자에게 알림 전송
+- **알림 시스템**: 알림 저장
 - **중복 처리 방지**: Redis 기반 Idempotency 키를 통한 중복 메시지 처리 방지
 - **사용자 서버 위치 추적**: Redis를 활용한 사용자별 서버 위치 정보 관리
 - **채팅방 자동 생성**: 존재하지 않는 채팅방 자동 생성 기능
@@ -62,8 +62,8 @@ ChatConsumeService (@KafkaListener)
 ┌─ ChatService (메시지 저장)
 │  └─ ChatRepository → MySQL
 └─ ChatDeliveryService (메시지 전달)
-   ├─ ChatRelayService → WebClient (다른 서버)
-   └─ NotificationService → WebClient (알림 서버)
+   ├─ ChatRelayService → WebClient (웹 소켓 서버로의 전송)
+   └─ NotificationService (알림)
 ```
 
 ## 📄 프로젝트 구조
