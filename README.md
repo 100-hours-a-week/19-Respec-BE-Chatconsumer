@@ -28,7 +28,7 @@
 
 # 💬 Respec Chat Consumer Service
 
-스펙랭킹에서의 채팅 기능을 위해 Kafka를 활용한 실시간 채팅 메시지 처리 시스템으로, Spring Boot 기반으로 구현한 마이크로서비스입니다.
+스펙랭킹에서의 채팅 Relay를 위한 마이크로서비스입니다.
 
 ## 📋 개요
 
