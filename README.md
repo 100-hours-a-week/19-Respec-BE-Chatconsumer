@@ -40,7 +40,7 @@
 
 2. [Kafka Consumer를 활용한 채팅 릴레이 시스템 구현기](https://aole.tistory.com/172)
 
-## ✨ 주요 기능
+## ✨ 기능 요약
 
 - **Kafka 메시지 소비**: `@KafkaListener`를 통한 채팅 메시지 실시간 처리
 - **채팅 메시지 저장**: MySQL을 활용한 채팅 보관
@@ -98,7 +98,7 @@ ChatConsumeService (@KafkaListener)
 
 
 
-## 🔍 주요 특징
+## 🔍 특징 요약
 
 ### 중복 처리 방지
 
@@ -116,7 +116,7 @@ Redis 기반 Idempotency 서비스를 통해 3분간 동일한 메시지의 중�
 
 WebClient를 활용하여 논블로킹 방식의 외부 서버 통신을 구현했습니다.
 
-## 📚 추가 자료
+## 📚 관련 레포
 
 - **메인 서버**: [19-Respec-BE](https://github.com/100-hours-a-week/19-Respec-BE/tree/main) - BackEnd 메인 서버 레포지토리
 
