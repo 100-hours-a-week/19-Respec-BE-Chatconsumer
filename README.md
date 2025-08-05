@@ -43,42 +43,12 @@
 ## ✨ 주요 기능
 
 - **Kafka 메시지 소비**: `@KafkaListener`를 통한 채팅 메시지 실시간 처리
-- **채팅 메시지 저장**: MySQL을 활용한 채팅 이력 영구 보관
+- **채팅 메시지 저장**: MySQL을 활용한 채팅 보관
 - **메시지 전달**: WebClient를 통한 메인 서버로의 메시지 릴레이
 - **알림 시스템**: 알림 저장
 - **중복 처리 방지**: Redis 기반 Idempotency 키를 통한 중복 메시지 처리 방지
 - **사용자 서버 위치 추적**: Redis를 활용한 사용자별 서버 위치 정보 관리
 - **채팅방 자동 생성**: 존재하지 않는 채팅방 자동 생성 기능
-
-## 🎯 핵심 구현 사항
-
-### Kafka 메시지 처리
-
-```java
-
-@KafkaListener(topics = "chat", containerFactory = "chatMessageContainerFactory")
-public void handleChatMessage(ChatConsumeEvent chatDto) {
-    // 중복 처리 방지를 위한 Idempotency 키 검증
-    // 채팅 메시지 저장 및 채팅방 자동 생성
-    // 메시지 릴레이 또는 알림 전송
-}
-```
-
-### 도메인 중심 설계
-
-- **Chat Domain**: 채팅 메시지 관련 비즈니스 로직
-- **Notification Domain**: 알림 시스템 관리
-- **User Domain**: 사용자 및 서버 위치 관리
-- **Chatroom Domain**: 채팅방 생성 및 관리
-- **ChatParticipation Domain**: 채팅 참여자 관리
-
-### 서비스 분리 구조
-
-- **ChatConsumeService**: Kafka 메시지 수신 및 조합
-- **ChatService**: 채팅 메시지 저장 로직
-- **ChatDeliveryService**: 메시지 전달 및 알림 관리
-- **ChatRelayService**: 외부 서버로의 메시지 릴레이
-- **NotificationService**: 푸시 알림 전송
 
 ## 🧩 시스템 구성도
 
