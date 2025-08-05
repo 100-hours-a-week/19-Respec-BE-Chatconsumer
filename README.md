@@ -50,20 +50,6 @@
 - **사용자 서버 위치 추적**: Redis를 활용한 사용자별 서버 위치 정보 관리
 - **채팅방 자동 생성**: 존재하지 않는 채팅방 자동 생성 기능
 
-## 🧩 시스템 구성도
-
-```
-Kafka Topic "chat" 
-       ↓
-ChatConsumeService (@KafkaListener)
-       ↓
-┌─ ChatService (메시지 저장)
-│  └─ ChatRepository → MySQL
-└─ ChatDeliveryService (메시지 전달)
-   ├─ ChatRelayService → WebClient (웹 소켓 서버로의 전송)
-   └─ NotificationService (알림)
-```
-
 ## 📄 프로젝트 구조
 
 ```
@@ -95,6 +81,22 @@ src/main/java/kakaotech/bootcamp/respec/specranking/chatconsumer/
         ├── redis/               # Redis 설정 및 서비스
         └── myserver/            # 헬스체크
 ```
+
+## 🧩 시스템 구성도
+
+```
+Kafka Topic "chat" 
+       ↓
+ChatConsumeService (@KafkaListener)
+       ↓
+┌─ ChatService (메시지 저장)
+│  └─ ChatRepository → MySQL
+└─ ChatDeliveryService (메시지 전달)
+   ├─ ChatRelayService → WebClient (웹 소켓 서버로의 전송)
+   └─ NotificationService (알림)
+```
+
+
 
 ## 🔍 주요 특징
 
