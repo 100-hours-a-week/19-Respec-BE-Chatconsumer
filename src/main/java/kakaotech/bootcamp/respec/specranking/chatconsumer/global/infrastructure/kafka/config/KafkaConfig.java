@@ -78,12 +78,42 @@ public class KafkaConfig {
 
     @Bean
     public DefaultErrorHandler kafkaErrorHandler() {
-        DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(
-                dlqProducerTemplate(),
-                (r, e) -> new TopicPartition(CHAT_DLT_TOPIC, r.partition())
-        );
+        return new DefaultErrorHandler((record, exception) -> {
+            final String dlqTopic = "chat-dlt";
+            final int partition = record.partition();
 
-        return new DefaultErrorHandler(recoverer, new FixedBackOff(1000L, 3L));
+            if (record.key() instanceof byte[] && record.value() instanceof byte[]) {
+                ProducerRecord<byte[], byte[]> outRecord = new ProducerRecord<>(
+                        dlqTopic, partition, (byte[]) record.key(), (byte[]) record.value()
+                );
+
+                outRecord.headers().add("key-type", "byte[]".getBytes(StandardCharsets.UTF_8));
+                outRecord.headers().add("value-type", "byte[]".getBytes(StandardCharsets.UTF_8));
+                outRecord.headers().add("error-type", "DESERIALIZATION_ERROR".getBytes(StandardCharsets.UTF_8));
+
+                dlqProducerTemplate().send(outRecord);
+            } else if (record.key() instanceof String && record.value() instanceof ChatConsumeEvent) {
+                try {
+                    ObjectMapper mapper = new ObjectMapper();
+                    byte[] keyBytes = mapper.writeValueAsBytes(record.key());
+                    byte[] valueBytes = mapper.writeValueAsBytes(record.value());
+
+                    ProducerRecord<byte[], byte[]> outRecord = new ProducerRecord<>(
+                            dlqTopic, partition, keyBytes, valueBytes
+                    );
+
+                    outRecord.headers().add("key-type", "String".getBytes(StandardCharsets.UTF_8));
+                    outRecord.headers().add("value-type", "ChatConsumeEvent".getBytes(StandardCharsets.UTF_8));
+                    outRecord.headers().add("error-type", "RUNTIME_ERROR".getBytes(StandardCharsets.UTF_8));
+
+                    dlqProducerTemplate().send(outRecord);
+                } catch (Exception e) {
+                    log.error("ChatConsumeEvent Byte 직렬화 과정에서 오류가 발생했습니다.", e);
+                }
+            } else {
+                log.error("DefaultErrorHandler에 등록되지 않은 type이 Consume 되고, Runtime 에러 발생 했습니다.", exception);
+            }
+        }, new FixedBackOff(1000L, 3L));
     }
 
     @Bean

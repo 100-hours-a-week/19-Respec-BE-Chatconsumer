@@ -1,14 +1,20 @@
-package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in;
+package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka;
 
 
-import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.exception.InvalidChatEventStatusException.MESSAGE_INVALID_STATUS;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.exception.InvalidChatEventStatusException.MESSAGE_INVALID_STATUS;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.exception.UserNotFoundException.MESSAGE_USER_NOT_FOUND;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.common.type.ChatStatus.SENT;
 
 import java.time.Duration;
+<<<<<<< HEAD:src/main/java/kakaotech/bootcamp/respec/specranking/chatconsumer/domain/chat/adapter/in/ChatConsumeService.java
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.Event.ChatConsumeEvent;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.exception.InvalidChatEventStatusException;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.mapping.ChatConsumeEventMapping;
+=======
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.Event.ChatConsumeEvent;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.exception.InvalidChatEventStatusException;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.mapping.ChatDtoMapping;
+>>>>>>> dev:src/main/java/kakaotech/bootcamp/respec/specranking/chatconsumer/domain/chat/adapter/in/kafka/ChatConsumeService.java
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.entity.Chat;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.repository.ChatRepository;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service.ChatDeliveryService;

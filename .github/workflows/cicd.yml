@@ -1,48 +1,69 @@
-name: ChatConsumer ECR CI
+name: ChatConsumer CI/CD with GitOps
 
 on:
   push:
-    branches: [dev]
+    branches:
+      - dev
 
 env:
   AWS_REGION: ap-northeast-2
   ACCOUNT_ID: 115313776476
-  REPO_NAME: chatconsumer-backend-dev
+  ECR_REPO_NAME: chatconsumer-backend-dev
+  INFRA_REPO: 100-hours-a-week/19-Respec-Infra
+  INFRA_PATH: helm/chatconsumer/values/dev.yaml
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: 🧾 Checkout ChatConsumer Repo
         uses: actions/checkout@v3
 
-      - name: Set environment variables
-        run: |
-          SHORT_SHA=${GITHUB_SHA::7}
-          echo "TAG=dev-${SHORT_SHA}" >> $GITHUB_ENV
+      - name: 🧠 Set TAG from commit SHA
+        run: echo "TAG=dev-${GITHUB_SHA::7}" >> $GITHUB_ENV
 
-      - name: Set up JDK 21
+      - name: ☕ Set up JDK 21
         uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
-          java-version: '21'
+          distribution: temurin
+          java-version: 21
 
-      - name: Build JAR with Gradle
+      - name: 🛠️ Build Spring Boot JAR
         run: ./gradlew clean build -x test
 
-      - name: Configure AWS Credentials
+      - name: 🔐 Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to Amazon ECR
+      - name: 🔑 Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and Push Docker image
+      - name: 🐳 Build & Push Docker Image
         run: |
-          IMAGE="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.REPO_NAME }}:${{ env.TAG }}"
+          IMAGE="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:${{ env.TAG }}"
           docker build -t "$IMAGE" .
           docker push "$IMAGE"
+
+      - name: 📦 Checkout Infra GitOps Repository
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ env.INFRA_REPO }}
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          path: infra
+
+      - name: 📝 Update Helm tag in values.yaml
+        run: |
+          sed -i "s/^\(\s*tag:\s*\).*/\1${{ env.TAG }}/" infra/${{ env.INFRA_PATH }}
+
+      - name: 💾 Commit and Push to Infra Repo
+        run: |
+          cd infra
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add ${{ env.INFRA_PATH }}
+          git commit -m "Update chatconsumer image tag to ${{ env.TAG }}"
+          git push
