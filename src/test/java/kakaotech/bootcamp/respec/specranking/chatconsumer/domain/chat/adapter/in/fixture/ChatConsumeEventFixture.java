@@ -1,6 +1,6 @@
 package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.fixture;
 
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.Event.ChatConsumeEvent;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.event.ChatConsumeEvent;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.global.common.type.ChatStatus;
 
 public class ChatConsumeEventFixture {

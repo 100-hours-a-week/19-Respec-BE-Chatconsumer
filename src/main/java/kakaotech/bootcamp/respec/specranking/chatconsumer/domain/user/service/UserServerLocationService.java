@@ -1,6 +1,6 @@
 package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.service;
 
-import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.constant.UserServerLocationServiceConstant.NOT_STRING_REDIS_VALUE_EXCEPTION;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.constant.UserServerLocationServiceConstant.NOT_CHAT_SESSION_TYPE_REDIS_VALUE_EXCEPTION;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.constant.UserServerLocationServiceConstant.REDIS_USER_KEY_PREFIX;
 
 import java.util.Optional;
@@ -26,7 +26,7 @@ public class UserServerLocationService {
                     ChatSessionRedisValue.class);
         } catch (IllegalArgumentException e) {
             throw new InvalidRedisValueTypeException(
-                    NOT_STRING_REDIS_VALUE_EXCEPTION + " key=" + REDIS_USER_KEY_PREFIX + partnerId);
+                    NOT_CHAT_SESSION_TYPE_REDIS_VALUE_EXCEPTION + " key=" + REDIS_USER_KEY_PREFIX + partnerId);
         }
 
         if (chatSessionRedisValue != null && chatSessionRedisValue.partnerId().equals(partnerId)) {
