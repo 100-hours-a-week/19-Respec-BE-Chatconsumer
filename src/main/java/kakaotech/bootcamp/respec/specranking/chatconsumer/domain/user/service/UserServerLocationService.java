@@ -17,19 +17,20 @@ public class UserServerLocationService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
 
-    public Optional<String> getServerUrl(Long userId) {
-        Object serverUrlObj = redisTemplate.opsForValue().get(REDIS_USER_KEY_PREFIX + userId);
+    public Optional<String> getServerUrl(Long partnerId) {
+        Object serverUrlObj = redisTemplate.opsForValue().get(REDIS_USER_KEY_PREFIX + partnerId);
 
-        if (serverUrlObj == null) {
-            return Optional.empty();
+        ChatSessionRedisValue chatSessionRedisValue = null;
+        try {
+            chatSessionRedisValue = objectMapper.convertValue(serverUrlObj,
+                    ChatSessionRedisValue.class);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidRedisValueTypeException(
+                    NOT_STRING_REDIS_VALUE_EXCEPTION + " key=" + REDIS_USER_KEY_PREFIX + partnerId);
         }
 
-        ChatSessionRedisValue chatSessionRedisValue = objectMapper.convertValue(serverUrlObj,
-                ChatSessionRedisValue.class);
-
-        if (chatSessionRedisValue != null && chatSessionRedisValue.partnerId().equals(userId)) {
-            final String serverIp = chatSessionRedisValue.privateAddress();
-            return Optional.of(serverIp);
+        if (chatSessionRedisValue != null && chatSessionRedisValue.partnerId().equals(partnerId)) {
+            return Optional.of(chatSessionRedisValue.privateAddress());
         }
 
         return Optional.empty();
