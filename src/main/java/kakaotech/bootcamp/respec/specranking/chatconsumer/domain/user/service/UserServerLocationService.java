@@ -4,6 +4,7 @@ import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.con
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.constant.UserServerLocationServiceConstant.REDIS_USER_KEY_PREFIX;
 
 import java.util.Optional;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.redis.dto.ChatSessionRedisValue;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.exception.InvalidRedisValueTypeException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -23,10 +24,10 @@ public class UserServerLocationService {
             return Optional.empty();
         }
 
-        ChatSessionRedisValue chatSessionRedisValue = objectMapper.convertValue(serverIpObj,
+        ChatSessionRedisValue chatSessionRedisValue = objectMapper.convertValue(serverUrlObj,
                 ChatSessionRedisValue.class);
 
-        if (chatSessionRedisValue != null && chatSessionRedisValue.partnerId().equals(receiver.getId()) {
+        if (chatSessionRedisValue != null && chatSessionRedisValue.partnerId().equals(userId)) {
             final String serverIp = chatSessionRedisValue.privateAddress();
             return Optional.of(serverIp);
         }
