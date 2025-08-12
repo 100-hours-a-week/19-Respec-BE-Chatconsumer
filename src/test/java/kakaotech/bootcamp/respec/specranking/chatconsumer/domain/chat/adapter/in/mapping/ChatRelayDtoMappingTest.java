@@ -15,7 +15,7 @@ class ChatRelayDtoMappingTest {
     @DisplayName("ChatConsumeEvent → ChatRelayDto로 정상 변환된다")
     void consumeToRelay_successfullyConverts() {
         // given
-        ChatConsumeEvent consumeEvent = ChatConsumeEventFixture.create();
+        ChatConsumeEvent consumeEvent = ChatConsumeEventFixture.createSuccessfulChatEvent();
 
         // when
         ChatRelayDto relayDto = ChatConsumeEventMapping.consumeToRelay(consumeEvent);

@@ -1,11 +1,11 @@
 package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka;
 
 
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.constant.ChatConsumeServiceConstant.IDEMPOTENCY_TTL;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.exception.InvalidChatEventStatusException.MESSAGE_INVALID_STATUS;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.exception.UserNotFoundException.MESSAGE_USER_NOT_FOUND;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.common.type.ChatStatus.SENT;
 
-import java.time.Duration;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.event.ChatConsumeEvent;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.exception.InvalidChatEventStatusException;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.mapping.ChatConsumeEventMapping;
@@ -26,9 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @RequiredArgsConstructor
 public class ChatConsumeService {
-
-    private static final Duration IDEMPOTENCY_TTL = Duration.ofMinutes(3);
-
     private final ChatDeliveryService chatDeliveryService;
     private final IdempotencyService idempotencyService;
     private final UserRepository userRepository;

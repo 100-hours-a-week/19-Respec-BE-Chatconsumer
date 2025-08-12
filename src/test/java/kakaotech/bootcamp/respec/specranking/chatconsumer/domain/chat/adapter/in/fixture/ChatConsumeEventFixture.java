@@ -1,17 +1,20 @@
 package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.fixture;
 
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.fixture.ChatFixture.MESSAGE_FIXTURE;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.fixture.ChatFixture.RECEIVER_ID_FIXTURE;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.fixture.ChatFixture.SENDER_ID_FIXTURE;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.common.type.ChatStatus.ERROR;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.common.type.ChatStatus.SENT;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.redis.constant.IdempotencyServiceTestConstant.KEY_VALUE;
+
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.event.ChatConsumeEvent;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.global.common.type.ChatStatus;
 
 public class ChatConsumeEventFixture {
+    public static ChatConsumeEvent createSuccessfulChatEvent() {
+        return new ChatConsumeEvent(KEY_VALUE, SENDER_ID_FIXTURE, RECEIVER_ID_FIXTURE, MESSAGE_FIXTURE, SENT);
+    }
 
-    private static final String IDEMPOTENT_KEY = "idemp-1234";
-    private static final Long SENDER_ID = 1L;
-    private static final Long RECEIVER_ID = 2L;
-    private static final String CHAT_MESSAGE = "안녕하세요!";
-    private static final ChatStatus CHAT_STATUS = ChatStatus.SENT;
-
-    public static ChatConsumeEvent create() {
-        return new ChatConsumeEvent(IDEMPOTENT_KEY, SENDER_ID, RECEIVER_ID, CHAT_MESSAGE, CHAT_STATUS);
+    public static ChatConsumeEvent createErrorChatEvent() {
+        return new ChatConsumeEvent(KEY_VALUE, SENDER_ID_FIXTURE, RECEIVER_ID_FIXTURE, MESSAGE_FIXTURE, ERROR);
     }
 }
