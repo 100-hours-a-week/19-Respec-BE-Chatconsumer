@@ -26,13 +26,9 @@
 
 ---
 
-# 💬 Respec Chat Consumer Service
+## 📋 설명
 
-스펙랭킹에서의 채팅 Relay를 위한 마이크로서비스입니다.
-
-## 📋 개요
-
-스펙랭킹 플랫폼의 채팅 시스템에서 Kafka를 통해 전송되는 메시지를 소비하고 처리하는 서비스입니다. 채팅 메시지를 데이터베이스에 저장하고, 사용자에게 알림을 전송하며, 중복 처리 방지 및 에러 처리를 담당합니다.
+스펙랭킹 플랫폼의 채팅 시스템에서 Kafka를 통해 전송되는 메시지를 소비하고 처리하는 서비스입니다. 채팅 메시지를 데이터베이스에 저장하고, 사용자에게 채팅 및 알림을 전송합니다.
 
 ## 관련 블로그 글
 
@@ -75,10 +71,10 @@ src/main/java/kakaotech/bootcamp/respec/specranking/chatconsumer/
 │   ├── chatroom/                 # 채팅방 도메인
 │   └── chatparticipation/        # 채팅 참여 도메인
 └── global/                        # 글로벌 설정
-    ├── common/                   # 공통 설정
+    ├── common/                   # 공통 로직
     └── infrastructure/           # 인프라 계층
         ├── kafka/               # Kafka 설정
-        ├── redis/               # Redis 설정 및 서비스
+        ├── redis/               # Redis 설정, 멱등성 로직
         └── myserver/            # 헬스체크
 ```
 
@@ -102,7 +98,7 @@ ChatConsumeService (@KafkaListener)
 
 ### 중복 처리 방지
 
-Redis 기반 Idempotency 서비스를 통해 3분간 동일한 메시지의 중복 처리를 방지합니다.
+Redis 기반 Idempotency 서비스를 통해 동일한 메시지의 중복 처리를 방지합니다.
 
 ### 에러 처리
 
