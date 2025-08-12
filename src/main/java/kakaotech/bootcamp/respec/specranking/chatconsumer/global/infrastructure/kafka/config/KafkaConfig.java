@@ -1,6 +1,7 @@
 package kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.config;
 
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.constant.KafkaConfigConstant.CHAT_CONSUMER_GROUP;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.constant.KafkaConfigConstant.CHAT_DLT_TOPIC;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
@@ -81,7 +82,7 @@ public class KafkaConfig {
     @Bean
     public DefaultErrorHandler kafkaErrorHandler() {
         return new DefaultErrorHandler((record, exception) -> {
-            final String dlqTopic = "chat-dlt";
+            final String dlqTopic = CHAT_DLT_TOPIC;
             final int partition = record.partition();
 
             if (record.key() instanceof byte[] && record.value() instanceof byte[]) {

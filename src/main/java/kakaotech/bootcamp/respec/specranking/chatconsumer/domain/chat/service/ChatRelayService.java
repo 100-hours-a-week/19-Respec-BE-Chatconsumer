@@ -1,10 +1,10 @@
 package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service;
 
-import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.constant.ChatRelayServiceConstant.CHAT_DLQ_TOPIC;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.constant.ChatRelayServiceConstant.CHAT_RELAY_API_PATH;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.constant.ChatRelayServiceConstant.SCHEME;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.constant.ChatRelayServiceConstant.TOTAL_REQUEST_CNT;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.constant.ChatRelayServiceConstant.WAIT_MAX_SECONDS;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.constant.KafkaConfigConstant.CHAT_DLT_RELAY_TOPIC;
 
 import java.time.Duration;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.ChatRelayDto;
@@ -37,7 +37,7 @@ public class ChatRelayService {
     }
 
     private void sendToDlq(String key, ChatRelayDto dto) {
-        relayDltProducerFactory.send(CHAT_DLQ_TOPIC, key, dto)
+        relayDltProducerFactory.send(CHAT_DLT_RELAY_TOPIC, key, dto)
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
                         log.error("Kafka Relay FAILED topic=chat-dlq.relay key={} payload={} error={}", key, dto,
