@@ -9,13 +9,8 @@ import java.time.Duration;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.event.ChatConsumeEvent;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.exception.InvalidChatEventStatusException;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.mapping.ChatConsumeEventMapping;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.entity.Chat;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.repository.ChatRepository;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service.ChatCreationService;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service.ChatDeliveryService;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chatparticipation.entity.ChatParticipation;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chatparticipation.repository.ChatParticipationRepository;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chatroom.entity.Chatroom;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chatroom.repository.ChatroomRepository;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.entity.User;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.exception.UserNotFoundException;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.repository.UserRepository;
@@ -36,18 +31,14 @@ public class ChatConsumeService {
 
     private final ChatDeliveryService chatDeliveryService;
     private final IdempotencyService idempotencyService;
-    private final ChatRepository chatRepository;
     private final UserRepository userRepository;
-    private final ChatroomRepository chatroomRepository;
-    private final ChatParticipationRepository chatParticipationRepository;
-
+    private final ChatCreationService chatCreationService;
 
     @KafkaListener(topics = "chat", containerFactory = "chatMessageContainerFactory")
     public void handleChatMessage(ChatConsumeEvent chatDto) {
         final String idempotentKey = chatDto.idempotentKey();
 
         try {
-
             if (!chatDto.status().equals(SENT)) {
                 throw new InvalidChatEventStatusException(MESSAGE_INVALID_STATUS);
             }
@@ -59,36 +50,14 @@ public class ChatConsumeService {
             User sender = findUser(chatDto.senderId());
             User receiver = findUser(chatDto.receiverId());
 
-            Chatroom chatroom = getOrCreateChatRoom(sender, receiver);
-
-            chatRepository.save(new Chat(sender, receiver, chatroom, chatDto.content()));
-
+            chatCreationService.createChat(sender, receiver, chatDto.content());
             chatDeliveryService.relayOrNotify(receiver, ChatConsumeEventMapping.consumeToRelay(chatDto));
-
         } catch (Exception e) {
             if (idempotencyService.hasKey(idempotentKey)) {
                 idempotencyService.delete(idempotentKey);
             }
             throw e;
         }
-    }
-
-    private Chatroom getOrCreateChatRoom(User sender, User receiver) {
-        return chatroomRepository.findCommonChatroom(sender, receiver)
-                .orElseGet(() -> createNewChatRoom(sender, receiver));
-    }
-
-    private Chatroom createNewChatRoom(User sender, User receiver) {
-        Chatroom chatroom = new Chatroom();
-        Chatroom savedChatroom = chatroomRepository.save(chatroom);
-
-        ChatParticipation senderParticipation = new ChatParticipation(savedChatroom, sender);
-        chatParticipationRepository.save(senderParticipation);
-
-        ChatParticipation receiverParticipation = new ChatParticipation(savedChatroom, receiver);
-        chatParticipationRepository.save(receiverParticipation);
-
-        return savedChatroom;
     }
 
     private User findUser(Long id) {
