@@ -127,7 +127,7 @@ class ChatCreationServiceTest {
         assertThat(hasReceiverParticipation).isTrue();
     }
 
-    @DisplayName("새로운 채팅방에 채팅이 올바르게 저장된다")
+    @DisplayName("새로운 채팅방 생성 시 채팅이 올바르게 저장된다")
     @Test
     void saveChatInNewChatroom() {
         // given
