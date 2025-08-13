@@ -2,11 +2,13 @@ package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.i
 
 
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.constant.ChatConsumeServiceConstant.IDEMPOTENCY_TTL;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.exception.DeserializeFailException.MESSAGE_DESERIALIZE_FAIL;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.exception.InvalidChatEventStatusException.MESSAGE_INVALID_STATUS;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.exception.UserNotFoundException.MESSAGE_USER_NOT_FOUND;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.common.type.ChatStatus.SENT;
 
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.event.ChatConsumeEvent;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.exception.DeserializeFailException;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.exception.InvalidChatEventStatusException;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.mapping.ChatConsumeEventMapping;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service.ChatCreationService;
@@ -33,28 +35,26 @@ public class ChatConsumeService {
 
     @KafkaListener(topics = "chat", containerFactory = "chatMessageContainerFactory")
     public void handleChatMessage(ChatConsumeEvent chatDto) {
+        if (chatDto == null) {
+            throw new DeserializeFailException(MESSAGE_DESERIALIZE_FAIL);
+        }
+
         final String idempotentKey = chatDto.idempotentKey();
 
-        try {
-            if (!chatDto.status().equals(SENT)) {
-                throw new InvalidChatEventStatusException(MESSAGE_INVALID_STATUS);
-            }
-
-            if (!idempotencyService.setIfAbsent(idempotentKey, IDEMPOTENCY_TTL)) {
-                return;
-            }
-
-            User sender = findUser(chatDto.senderId());
-            User receiver = findUser(chatDto.receiverId());
-
-            chatCreationService.createChat(sender, receiver, chatDto.content());
-            chatDeliveryService.relayOrNotify(receiver, ChatConsumeEventMapping.consumeToRelay(chatDto));
-        } catch (Exception e) {
-            if (idempotencyService.hasKey(idempotentKey)) {
-                idempotencyService.delete(idempotentKey);
-            }
-            throw e;
+        if (!chatDto.status().equals(SENT)) {
+            throw new InvalidChatEventStatusException(MESSAGE_INVALID_STATUS);
         }
+
+        if (!idempotencyService.setIfAbsent(idempotentKey, IDEMPOTENCY_TTL)) {
+            return;
+        }
+
+        User sender = findUser(chatDto.senderId());
+        User receiver = findUser(chatDto.receiverId());
+
+        chatCreationService.createChat(sender, receiver, chatDto.content());
+        chatDeliveryService.relayOrNotify(receiver, ChatConsumeEventMapping.consumeToRelay(chatDto));
+
     }
 
     private User findUser(Long id) {

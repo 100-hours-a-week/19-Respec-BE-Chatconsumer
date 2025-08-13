@@ -1,9 +1,9 @@
 package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service;
 
-import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.constant.ChatRelayServiceConstant.CHAT_DLQ_TOPIC;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.constant.ChatRelayServiceConstant.TOTAL_REQUEST_CNT;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.constant.ChatRelayServiceConstant.WAIT_MAX_SECONDS;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.constant.UrlConstant.LOCALHOST;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.constant.KafkaConfigConstant.CHAT_DLT_RELAY_TOPIC;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
@@ -138,7 +138,7 @@ class ChatRelayServiceTest {
         await().atMost(WAIT_MAX_SECONDS * TOTAL_REQUEST_CNT, TimeUnit.SECONDS)
                 .untilAsserted(() ->
                         verify(relayDltProducerFactory)
-                                .send(eq(CHAT_DLQ_TOPIC), any(), eq(chatRelayDto))
+                                .send(eq(CHAT_DLT_RELAY_TOPIC), any(), eq(chatRelayDto))
                 );
     }
 

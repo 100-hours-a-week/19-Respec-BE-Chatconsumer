@@ -1,19 +1,19 @@
 package kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.config;
 
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.constant.KafkaConfigConstant.CHAT_CONSUMER_GROUP;
-import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.constant.KafkaConfigConstant.CHAT_DLT_TOPIC;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.constant.KafkaConfigConstant.CHAT_DESERIALIZE_DLT_TOPIC;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.constant.KafkaConfigConstant.CHAT_RUNTIME_DLT_TOPIC;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.event.ChatConsumeEvent;
+import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.exception.DeserializeFailException;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.ChatRelayDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -25,7 +25,9 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.kafka.support.serializer.DeserializationException;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
@@ -39,86 +41,54 @@ public class KafkaConfig {
     private final KafkaProperties kafkaProperties;
 
     @Bean
-    public ProducerFactory<byte[], byte[]> dlqProducerFactory() {
+    public KafkaTemplate<byte[], byte[]> dltKafkaTemplate() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
-        return new DefaultKafkaProducerFactory<>(props);
-    }
-
-    @Bean
-    public KafkaTemplate<byte[], byte[]> dlqProducerTemplate() {
-        return new KafkaTemplate<>(dlqProducerFactory());
-    }
-
-    @Bean
-    public ProducerFactory<String, ChatRelayDto> relayDltProducerFactory() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-
-        return new DefaultKafkaProducerFactory<>(props);
+        ProducerFactory<byte[], byte[]> producerFactory = new DefaultKafkaProducerFactory<>(props);
+        return new KafkaTemplate<>(producerFactory);
     }
 
     @Bean
     public KafkaTemplate<String, ChatRelayDto> relayDltKafkaTemplate() {
-        return new KafkaTemplate<>(relayDltProducerFactory());
+        Map<String, Object> props = new HashMap<>();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        ProducerFactory<String, ChatRelayDto> producerFactory = new DefaultKafkaProducerFactory<>(props);
+        return new KafkaTemplate<>(producerFactory);
     }
 
+    @Bean
+    public DeadLetterPublishingRecoverer deadLetterPublishingRecoverer(KafkaTemplate<byte[], byte[]> dltKafkaTemplate) {
+        return new DeadLetterPublishingRecoverer(dltKafkaTemplate, (record, exception) -> {
+            if (exception.getCause() instanceof DeserializationException) {
+                return new TopicPartition(CHAT_DESERIALIZE_DLT_TOPIC, record.partition());
+            } else {
+                return new TopicPartition(CHAT_RUNTIME_DLT_TOPIC, record.partition());
+            }
+        });
+    }
 
     @Bean
-    public DefaultErrorHandler kafkaErrorHandler() {
-        return new DefaultErrorHandler((record, exception) -> {
-            final String dlqTopic = CHAT_DLT_TOPIC;
-            final int partition = record.partition();
+    public DefaultErrorHandler kafkaErrorHandler(DeadLetterPublishingRecoverer recoverer) {
+        FixedBackOff backOff = new FixedBackOff(1000L, 2L);
 
-            if (record.key() instanceof byte[] && record.value() instanceof byte[]) {
-                ProducerRecord<byte[], byte[]> outRecord = new ProducerRecord<>(
-                        dlqTopic, partition, (byte[]) record.key(), (byte[]) record.value()
-                );
+        DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, backOff);
+        errorHandler.addNotRetryableExceptions(DeserializeFailException.class);
 
-                outRecord.headers().add("key-type", "byte[]".getBytes(StandardCharsets.UTF_8));
-                outRecord.headers().add("value-type", "byte[]".getBytes(StandardCharsets.UTF_8));
-                outRecord.headers().add("error-type", "DESERIALIZATION_ERROR".getBytes(StandardCharsets.UTF_8));
-
-                dlqProducerTemplate().send(outRecord);
-            } else if (record.key() instanceof String && record.value() instanceof ChatConsumeEvent) {
-                try {
-                    ObjectMapper mapper = new ObjectMapper();
-                    byte[] keyBytes = mapper.writeValueAsBytes(record.key());
-                    byte[] valueBytes = mapper.writeValueAsBytes(record.value());
-
-                    ProducerRecord<byte[], byte[]> outRecord = new ProducerRecord<>(
-                            dlqTopic, partition, keyBytes, valueBytes
-                    );
-
-                    outRecord.headers().add("key-type", "String".getBytes(StandardCharsets.UTF_8));
-                    outRecord.headers().add("value-type", "ChatConsumeEvent".getBytes(StandardCharsets.UTF_8));
-                    outRecord.headers().add("error-type", "RUNTIME_ERROR".getBytes(StandardCharsets.UTF_8));
-
-                    dlqProducerTemplate().send(outRecord);
-                } catch (Exception e) {
-                    log.error("ChatConsumeEvent Byte 직렬화 과정에서 오류가 발생했습니다.", e);
-                }
-            } else {
-                log.error("DefaultErrorHandler에 등록되지 않은 type이 Consume 되고, Runtime 에러 발생 했습니다.", exception);
-            }
-        }, new FixedBackOff(1000L, 3L));
+        return errorHandler;
     }
 
     @Bean
     public ConsumerFactory<String, ChatConsumeEvent> chatMessageConsumerFactory() {
         Map<String, Object> consumerProps = getConsumerProps();
-        Map<String, Object> deserializerProps = getDeserializerProps();
+
+        JsonDeserializer<ChatConsumeEvent> jsonDeserializer = new JsonDeserializer<>(ChatConsumeEvent.class, false);
 
         ErrorHandlingDeserializer<String> keyDeserializer =
                 new ErrorHandlingDeserializer<>(new StringDeserializer());
-
-        JsonDeserializer<ChatConsumeEvent> jsonDeserializer = new JsonDeserializer<>(ChatConsumeEvent.class);
-        jsonDeserializer.configure(deserializerProps, false);
-
         ErrorHandlingDeserializer<ChatConsumeEvent> valueDeserializer =
                 new ErrorHandlingDeserializer<>(jsonDeserializer);
 
@@ -126,11 +96,12 @@ public class KafkaConfig {
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, ChatConsumeEvent> chatMessageContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, ChatConsumeEvent> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(chatMessageConsumerFactory());
-        factory.setCommonErrorHandler(kafkaErrorHandler());
+    public ConcurrentKafkaListenerContainerFactory<String, ChatConsumeEvent> chatMessageContainerFactory(
+            ConsumerFactory<String, ChatConsumeEvent> consumerFactory,
+            DefaultErrorHandler kafkaErrorHandler) {
+        ConcurrentKafkaListenerContainerFactory<String, ChatConsumeEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory);
+        factory.setCommonErrorHandler(kafkaErrorHandler);
         return factory;
     }
 
@@ -140,13 +111,6 @@ public class KafkaConfig {
         consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
         consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, CHAT_CONSUMER_GROUP);
         return consumerProps;
-    }
-
-    private static Map<String, Object> getDeserializerProps() {
-        Map<String, Object> deserializerProps = new HashMap<>();
-        deserializerProps.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
-        deserializerProps.put(JsonDeserializer.VALUE_DEFAULT_TYPE, ChatConsumeEvent.class.getName());
-        return deserializerProps;
     }
 
 }
