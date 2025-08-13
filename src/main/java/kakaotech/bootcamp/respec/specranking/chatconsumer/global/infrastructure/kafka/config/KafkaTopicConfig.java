@@ -1,7 +1,8 @@
 package kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.config;
 
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.constant.KafkaConfigConstant.CHAT_DESERIALIZE_DLT_TOPIC;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.constant.KafkaConfigConstant.CHAT_DLT_RELAY_TOPIC;
-import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.constant.KafkaConfigConstant.CHAT_DLT_TOPIC;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.constant.KafkaConfigConstant.CHAT_RUNTIME_DLT_TOPIC;
 import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.constant.KafkaConfigConstant.CHAT_TOPIC;
 
 import lombok.RequiredArgsConstructor;
@@ -25,8 +26,16 @@ public class KafkaTopicConfig {
     }
 
     @Bean
-    public NewTopic chatDltTopic() {
-        return TopicBuilder.name(CHAT_DLT_TOPIC)
+    public NewTopic chatRuntimeDltTopic() {
+        return TopicBuilder.name(CHAT_RUNTIME_DLT_TOPIC)
+                .partitions(kafkaProperties.getPartitions_cnt())
+                .replicas(kafkaProperties.getReplicas_cnt())
+                .build();
+    }
+
+    @Bean
+    public NewTopic chatDeserializeDltTopic() {
+        return TopicBuilder.name(CHAT_DESERIALIZE_DLT_TOPIC)
                 .partitions(kafkaProperties.getPartitions_cnt())
                 .replicas(kafkaProperties.getReplicas_cnt())
                 .build();
