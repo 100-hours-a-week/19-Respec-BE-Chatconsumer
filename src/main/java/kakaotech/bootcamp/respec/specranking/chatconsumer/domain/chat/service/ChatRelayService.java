@@ -1,51 +1,54 @@
 package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.service;
 
-import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.common.type.NotificationTargetType.CHAT;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.constant.ChatRelayServiceConstant.CHAT_RELAY_API_PATH;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.constant.ChatRelayServiceConstant.SCHEME;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.constant.ChatRelayServiceConstant.TOTAL_REQUEST_CNT;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.constant.ChatRelayServiceConstant.WAIT_MAX_SECONDS;
+import static kakaotech.bootcamp.respec.specranking.chatconsumer.global.infrastructure.kafka.constant.KafkaConfigConstant.CHAT_DLT_RELAY_TOPIC;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.redis.dto.ChatSessionRedisValue;
+import java.time.Duration;
 import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.dto.ChatRelayDto;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.notification.entity.Notification;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.notification.repository.NotificationRepository;
-import kakaotech.bootcamp.respec.specranking.chatconsumer.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class ChatRelayService {
 
-    private static final String REDIS_USER_KEY_PREFIX = "chat:user:";
-    private static final String CHAT_RELAY_API_PATH = "/api/chat/relay";
-    private static final String SCHEME = "http://";
+    private final KafkaTemplate<String, ChatRelayDto> relayDltProducerFactory;
 
-    private final RedisTemplate<String, Object> redisTemplate;
-    private final WebClient webClient;
-    private final NotificationRepository notificationRepository;
-    private final ObjectMapper objectMapper;
+    public void relay(String serverIp, ChatRelayDto dto) {
+        String key = generateKeyForSequence(dto.senderId(), dto.receiverId());
 
-    public void relayOrNotify(User receiver, ChatRelayDto dto) {
-        Object serverIpObj = redisTemplate.opsForValue().get(REDIS_USER_KEY_PREFIX + receiver.getId());
-        ChatSessionRedisValue chatSessionRedisValue = objectMapper.convertValue(serverIpObj,
-                ChatSessionRedisValue.class);
+        WebClient.builder().build()
+                .post()
+                .uri(SCHEME + serverIp + CHAT_RELAY_API_PATH)
+                .bodyValue(dto)
+                .retrieve()
+                .bodyToMono(String.class)
+                .timeout(Duration.ofSeconds(WAIT_MAX_SECONDS))
+                .retry(TOTAL_REQUEST_CNT - 1)
+                .doOnError(error -> sendToDlq(key, dto))
+                .subscribe();
+    }
 
-        if (chatSessionRedisValue != null && chatSessionRedisValue.partnerId().equals(receiver.getId())) {
-            final String serverIp = chatSessionRedisValue.privateAddress();
-            webClient.post()
-                    .uri(SCHEME + serverIp + CHAT_RELAY_API_PATH)
-                    .bodyValue(dto)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .subscribe();
-        } else {
-            if (notificationRepository.existsByUserIdAndTargetName(receiver.getId(), CHAT)) {
-                return;
-            }
-            notificationRepository.save(new Notification(receiver, CHAT));
-        }
+    private void sendToDlq(String key, ChatRelayDto dto) {
+        relayDltProducerFactory.send(CHAT_DLT_RELAY_TOPIC, key, dto)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("Kafka Relay FAILED topic=chat-dlq.relay key={} payload={} error={}", key, dto,
+                                ex.getMessage(), ex);
+                    }
+                });
+    }
+
+    private String generateKeyForSequence(Long senderId, Long receiverId) {
+        return (senderId < receiverId)
+                ? senderId + "_" + receiverId
+                : receiverId + "_" + senderId;
     }
 }

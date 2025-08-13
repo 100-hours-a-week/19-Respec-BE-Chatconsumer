@@ -1,4 +1,4 @@
-package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.Event;
+package kakaotech.bootcamp.respec.specranking.chatconsumer.domain.chat.adapter.in.kafka.event;
 
 import kakaotech.bootcamp.respec.specranking.chatconsumer.global.common.type.ChatStatus;
 
