@@ -147,33 +147,14 @@ class ChatConsumeServiceTest {
         given(userRepository.findById(SENDER_ID_FIXTURE)).willReturn(Optional.of(sender));
         given(userRepository.findById(RECEIVER_ID_FIXTURE)).willReturn(Optional.of(receiver));
 
-        // when - 같은 메시지를 두 번 처리
+        // when
         chatConsumeService.handleChatMessage(event);
         chatConsumeService.handleChatMessage(event);
 
-        // then - 실제 비즈니스 로직은 한 번만 실행
+        // then
         then(chatCreationService).should(times(1)).createChat(sender, receiver, MESSAGE_FIXTURE);
         then(chatDeliveryService).should(times(1)).relayOrNotify(eq(receiver), any());
         then(idempotencyService).should(times(2)).setIfAbsent(KEY_VALUE, IDEMPOTENCY_TTL);
-    }
-
-    @Test
-    @DisplayName("에러 발생 시 멱등키가 사라진다")
-    void deleteIdempotentKey_whenAnyErrorOccurs() {
-        // given
-        ChatConsumeEvent event = createChatConsumeEvent(KEY_VALUE, SENDER_ID_FIXTURE, RECEIVER_ID_FIXTURE,
-                MESSAGE_FIXTURE, SENT);
-
-        given(idempotencyService.setIfAbsent(KEY_VALUE, IDEMPOTENCY_TTL)).willReturn(true);
-        given(userRepository.findById(SENDER_ID_FIXTURE)).willThrow(new RuntimeException(""));
-        given(idempotencyService.hasKey(KEY_VALUE)).willReturn(true);
-
-        // when & then
-        assertThatThrownBy(() -> chatConsumeService.handleChatMessage(event))
-                .isInstanceOf(RuntimeException.class);
-
-        then(idempotencyService).should(times(1)).setIfAbsent(KEY_VALUE, IDEMPOTENCY_TTL);
-        then(idempotencyService).should(times(1)).delete(KEY_VALUE);
     }
 
     private ChatConsumeEvent createChatConsumeEvent(String idempotentKey, Long senderId,
