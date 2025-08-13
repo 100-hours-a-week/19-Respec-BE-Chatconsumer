@@ -39,29 +39,17 @@ public class KafkaConfig {
     private final KafkaProperties kafkaProperties;
 
     @Bean
-    public ConsumerFactory<String, ChatConsumeEvent> chatMessageConsumerFactory() {
-        Map<String, Object> consumerProps = getConsumerProps();
-        Map<String, Object> deserializerProps = getDeserializerProps();
-
-        ErrorHandlingDeserializer<String> keyDeserializer =
-                new ErrorHandlingDeserializer<>(new StringDeserializer());
-
-        JsonDeserializer<ChatConsumeEvent> jsonDeserializer = new JsonDeserializer<>(ChatConsumeEvent.class);
-        jsonDeserializer.configure(deserializerProps, false);
-
-        ErrorHandlingDeserializer<ChatConsumeEvent> valueDeserializer =
-                new ErrorHandlingDeserializer<>(jsonDeserializer);
-
-        return new DefaultKafkaConsumerFactory<>(consumerProps, keyDeserializer, valueDeserializer);
-    }
-
-    @Bean
     public ProducerFactory<byte[], byte[]> dlqProducerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
         return new DefaultKafkaProducerFactory<>(props);
+    }
+
+    @Bean
+    public KafkaTemplate<byte[], byte[]> dlqProducerTemplate() {
+        return new KafkaTemplate<>(dlqProducerFactory());
     }
 
     @Bean
@@ -75,9 +63,10 @@ public class KafkaConfig {
     }
 
     @Bean
-    public KafkaTemplate<byte[], byte[]> dlqProducerTemplate() {
-        return new KafkaTemplate<>(dlqProducerFactory());
+    public KafkaTemplate<String, ChatRelayDto> relayDltKafkaTemplate() {
+        return new KafkaTemplate<>(relayDltProducerFactory());
     }
+
 
     @Bean
     public DefaultErrorHandler kafkaErrorHandler() {
@@ -120,6 +109,23 @@ public class KafkaConfig {
     }
 
     @Bean
+    public ConsumerFactory<String, ChatConsumeEvent> chatMessageConsumerFactory() {
+        Map<String, Object> consumerProps = getConsumerProps();
+        Map<String, Object> deserializerProps = getDeserializerProps();
+
+        ErrorHandlingDeserializer<String> keyDeserializer =
+                new ErrorHandlingDeserializer<>(new StringDeserializer());
+
+        JsonDeserializer<ChatConsumeEvent> jsonDeserializer = new JsonDeserializer<>(ChatConsumeEvent.class);
+        jsonDeserializer.configure(deserializerProps, false);
+
+        ErrorHandlingDeserializer<ChatConsumeEvent> valueDeserializer =
+                new ErrorHandlingDeserializer<>(jsonDeserializer);
+
+        return new DefaultKafkaConsumerFactory<>(consumerProps, keyDeserializer, valueDeserializer);
+    }
+
+    @Bean
     public ConcurrentKafkaListenerContainerFactory<String, ChatConsumeEvent> chatMessageContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, ChatConsumeEvent> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
@@ -128,10 +134,6 @@ public class KafkaConfig {
         return factory;
     }
 
-    @Bean
-    public KafkaTemplate<String, ChatRelayDto> relayDltKafkaTemplate() {
-        return new KafkaTemplate<>(relayDltProducerFactory());
-    }
 
     private Map<String, Object> getConsumerProps() {
         Map<String, Object> consumerProps = new HashMap<>();
